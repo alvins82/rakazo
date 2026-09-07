@@ -3358,7 +3358,7 @@ msgstr "Admite razonamiento"
 #: src/pages/ModelSettingsOverlay.tsx:508
 #: src/pages/Onboarding.tsx:425
 msgid "Supports images"
-msgstr ""
+msgstr "Admite imágenes"
 
 #: src/pages/shell/command-palette.tsx:90
 msgid "Switch bot"

@@ -3358,7 +3358,7 @@ msgstr "सोचने की क्षमता का समर्थन क�
 #: src/pages/ModelSettingsOverlay.tsx:508
 #: src/pages/Onboarding.tsx:425
 msgid "Supports images"
-msgstr ""
+msgstr "छवियों का समर्थन"
 
 #: src/pages/shell/command-palette.tsx:90
 msgid "Switch bot"
