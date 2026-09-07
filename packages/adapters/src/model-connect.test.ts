@@ -33,6 +33,30 @@ describe("modelCredentialDto", () => {
     });
   });
 
+  it("projects image support for the selected model only", () => {
+    const plaintext = serializeModelSecret({
+      kind: "openai_compatible",
+      baseUrl: "https://example.invalid/v1",
+      visionModelIds: ["vision-model", "another-vision-model"],
+    });
+    const row = {
+      id: "cred-vision",
+      provider: "openai-compatible",
+      label: "Vision server",
+      isDefault: true,
+      supportsImages: false,
+    };
+
+    expect(modelCredentialDto({ ...row, defaultModel: "vision-model" }, plaintext)).toMatchObject({
+      supportsImages: true,
+      modelId: "vision-model",
+    });
+    expect(modelCredentialDto({ ...row, defaultModel: "text-model" }, plaintext)).toMatchObject({
+      supportsImages: false,
+      modelId: "text-model",
+    });
+  });
+
   it("exposes defaultModel as modelId for provider credentials", () => {
     expect(
       modelCredentialDto({
@@ -112,6 +136,25 @@ describe("compatible connection updates", () => {
         buildModelConnectPlaintext({ ...input, baseUrl: "http://localhost:8001/v1" }, previous),
       ),
     ).not.toHaveProperty("apiKey");
+  });
+
+  it("keeps image capability scoped to each explicitly enabled model", () => {
+    const vision = buildModelConnectPlaintext({ ...input, supportsImages: true });
+    const text = buildModelConnectPlaintext(
+      { ...input, modelId: "text-model", supportsImages: false },
+      vision,
+    );
+    const nextVision = buildModelConnectPlaintext(
+      { ...input, modelId: "another-vision-model", supportsImages: true },
+      text,
+    );
+
+    expect(parseModelSecret(text)).toMatchObject({
+      visionModelIds: ["arbitrary-model"],
+    });
+    expect(parseModelSecret(nextVision)).toMatchObject({
+      visionModelIds: ["arbitrary-model", "another-vision-model"],
+    });
   });
   it.each(["", "fake-replacement-key"])(
     "honors an explicit key replacement or removal",

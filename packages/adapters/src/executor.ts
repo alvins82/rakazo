@@ -224,6 +224,7 @@ import {
   IMAGE_RETURNING_COMPUTER_TOOLS,
   MODEL_CANNOT_SEE_MESSAGE,
   modelAcceptsImageInput,
+  modelIdSupportsImages,
 } from "./model-vision.js";
 import { toOAuthCredential } from "./pi-credentials.js";
 import {
@@ -4549,15 +4550,21 @@ async function resolveModelKey(
       const oauth = resolved.secret.kind === "oauth" ? resolved.secret.credential : undefined;
       const baseUrl =
         resolved.secret.kind === "openai_compatible" ? resolved.secret.baseUrl : undefined;
+      const acceptsImages =
+        credential.provider === OPENAI_COMPATIBLE_PROVIDER_ID &&
+        resolved.secret.kind === "openai_compatible" &&
+        (modelIdSupportsImages(resolved.secret.visionModelIds, modelId) ||
+          // Legacy secrets have no per-model list, so keep their existing
+          // capability scoped to the model saved in the space preference.
+          (resolved.secret.visionModelIds === undefined &&
+            credential.supportsImages === true &&
+            credential.defaultModel?.trim() === modelId.trim()));
       return {
         apiKey: resolved.apiKey,
         baseUrl,
         reasoning:
           resolved.secret.kind === "openai_compatible" ? resolved.secret.reasoning : undefined,
-        acceptsImages:
-          credential.provider === OPENAI_COMPATIBLE_PROVIDER_ID &&
-          credential.supportsImages === true &&
-          credential.defaultModel?.trim() === modelId.trim(),
+        acceptsImages,
         oauth,
         persistOAuth: oauth
           ? async (next) => {

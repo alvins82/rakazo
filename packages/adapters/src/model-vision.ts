@@ -17,6 +17,37 @@ export const IMAGE_RETURNING_COMPUTER_TOOLS = new Set([
 
 export const MODEL_CANNOT_SEE_MESSAGE = "This bot's model cannot see; pick a vision-capable model.";
 
+/** Return whether a model id is explicitly enabled for image input on a connection. */
+export function modelIdSupportsImages(
+  modelIds: readonly string[] | undefined,
+  modelId: string | null | undefined,
+): boolean {
+  const normalizedModelId = modelId?.trim();
+  return Boolean(
+    normalizedModelId && modelIds?.some((candidate) => candidate.trim() === normalizedModelId),
+  );
+}
+
+/** Update the explicit per-model image capability without disturbing other model ids. */
+export function updateModelImageCapabilities(
+  modelIds: readonly string[] | undefined,
+  modelId: string | null | undefined,
+  supportsImages: boolean | undefined,
+): string[] {
+  const next = new Set(
+    (modelIds ?? [])
+      .map((candidate) => candidate.trim())
+      .filter((candidate) => candidate.length > 0),
+  );
+  const normalizedModelId = modelId?.trim();
+  if (normalizedModelId && supportsImages !== undefined) {
+    if (supportsImages) next.add(normalizedModelId);
+    else next.delete(normalizedModelId);
+  }
+  return [...next];
+}
+
+
 let catalogModelsCache: Models | undefined;
 
 function catalogModels(): Models {
