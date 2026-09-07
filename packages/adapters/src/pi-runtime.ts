@@ -1198,21 +1198,25 @@ export function pruneComputerScreenshotContext(
   maxImagesPerPrompt?: number,
 ): AgentMessage[] {
   const imageLimit =
-    maxImagesPerPrompt === undefined || !Number.isFinite(maxImagesPerPrompt)
-      ? DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT
-      : Math.max(0, Math.floor(maxImagesPerPrompt));
-  let remaining = imageLimit;
-  const nonScreenshotImages = messages.reduce(
-    (count, message) =>
-      isComputerScreenshotMessage(message) ? count : count + imagePartCount(message),
-    0,
-  );
-  if (nonScreenshotImages > imageLimit) {
-    throw new Error(
-      `The configured model image limit is ${imageLimit}, but the prompt contains ${nonScreenshotImages} non-screenshot images.`,
+    maxImagesPerPrompt === undefined
+      ? undefined
+      : Number.isFinite(maxImagesPerPrompt)
+        ? Math.max(0, Math.floor(maxImagesPerPrompt))
+        : DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT;
+  let remaining = imageLimit ?? DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT;
+  if (imageLimit !== undefined) {
+    const nonScreenshotImages = messages.reduce(
+      (count, message) =>
+        isComputerScreenshotMessage(message) ? count : count + imagePartCount(message),
+      0,
     );
+    if (nonScreenshotImages > imageLimit) {
+      throw new Error(
+        `The configured model image limit is ${imageLimit}, but the prompt contains ${nonScreenshotImages} non-screenshot images.`,
+      );
+    }
+    remaining = imageLimit - nonScreenshotImages;
   }
-  remaining -= nonScreenshotImages;
   let transformed: AgentMessage[] | undefined;
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index];

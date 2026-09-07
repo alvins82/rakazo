@@ -1,6 +1,5 @@
 import type { ModelOAuthBegin } from "@rakazo/contracts";
 import {
-  DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT,
   OPENAI_COMPATIBLE_BASE_URL_HINT,
   OPENAI_COMPATIBLE_PROVIDER_ID,
   openAiCompatibleConnectReady,
@@ -49,9 +48,7 @@ export default function Models() {
   const [baseUrl, setBaseUrl] = useState("");
   const [reasoning, setReasoning] = useState(false);
   const [supportsImages, setSupportsImages] = useState(false);
-  const [maxImagesPerPrompt, setMaxImagesPerPrompt] = useState(
-    String(DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT),
-  );
+  const [maxImagesPerPrompt, setMaxImagesPerPrompt] = useState("");
   const [showEndpointHelp, setShowEndpointHelp] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
@@ -118,9 +115,7 @@ export default function Models() {
       setBaseUrl(nextCredential?.baseUrl ?? "");
       setReasoning(nextCredential?.reasoning ?? false);
       setSupportsImages(nextCredential?.supportsImages ?? false);
-      setMaxImagesPerPrompt(
-        String(nextCredential?.maxImagesPerPrompt ?? DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT),
-      );
+      setMaxImagesPerPrompt(String(nextCredential?.maxImagesPerPrompt ?? ""));
     }
   }, []);
 
@@ -203,9 +198,7 @@ export default function Models() {
     setProvider(nextProvider);
     setReasoning(nextCredential?.reasoning ?? false);
     setSupportsImages(nextCredential?.supportsImages ?? false);
-    setMaxImagesPerPrompt(
-      String(nextCredential?.maxImagesPerPrompt ?? DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT),
-    );
+    setMaxImagesPerPrompt(String(nextCredential?.maxImagesPerPrompt ?? ""));
     setModelId(
       nextProvider === OPENAI_COMPATIBLE_PROVIDER_ID
         ? (nextCredential?.modelId ?? "")
@@ -276,7 +269,7 @@ export default function Models() {
       maxImagesPerPrompt,
       supportsImages,
     );
-    if (supportsImages && parsedMaxImagesPerPrompt === undefined) {
+    if (supportsImages && maxImagesPerPrompt.trim() && parsedMaxImagesPerPrompt === undefined) {
       setError(t("Enter a whole number from 1 to 1000 for the image limit."));
       return;
     }

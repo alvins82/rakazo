@@ -1,7 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   type IntegrationSetupState,
-  DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT,
   OPENAI_COMPATIBLE_PROVIDER_ID,
   openAiCompatibleConnectReady,
   openAiCompatibleProbeSuccessMessage,
@@ -107,9 +106,7 @@ export function OnboardingPage() {
   const [reasoning, setReasoning] = useState(false);
   const [manualModelId, setManualModelId] = useState(false);
   const [supportsImages, setSupportsImages] = useState(false);
-  const [maxImagesPerPrompt, setMaxImagesPerPrompt] = useState(
-    String(DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT),
-  );
+  const [maxImagesPerPrompt, setMaxImagesPerPrompt] = useState("");
   const [{ models: probeModels, baseUrl: probedBaseUrl, probing }, setProbe] =
     useState(initialModelProbeState);
   const [modelProbe] = useState(() => createModelProbe(setProbe));
@@ -235,7 +232,7 @@ export function OnboardingPage() {
     setReasoning(false);
     setManualModelId(false);
     setSupportsImages(false);
-    setMaxImagesPerPrompt(String(DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT));
+    setMaxImagesPerPrompt("");
     resetOpenAiCompatibleProbe();
     setError(null);
     setNotice(null);
@@ -276,7 +273,7 @@ export function OnboardingPage() {
           maxImagesPerPrompt,
           supportsImages,
         );
-        if (supportsImages && parsedMaxImagesPerPrompt === undefined) {
+        if (supportsImages && maxImagesPerPrompt.trim() && parsedMaxImagesPerPrompt === undefined) {
           setError(t`Enter a whole number from 1 to 1000 for the image limit.`);
           return;
         }
