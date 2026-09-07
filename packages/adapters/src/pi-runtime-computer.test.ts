@@ -222,6 +222,60 @@ describe("Pi computer tool dispatch", () => {
     ).toEqual([true, false, true]);
   });
 
+  it("rejects user images that exceed a configured model limit", () => {
+    const messages = [
+      {
+        role: "user" as const,
+        content: [
+          { type: "image" as const, data: "user-image-1", mimeType: "image/png" as const },
+          { type: "image" as const, data: "user-image-2", mimeType: "image/png" as const },
+        ],
+        timestamp: 1,
+      },
+    ];
+
+    expect(() => pruneComputerScreenshotContext(messages, 1)).toThrow(
+      "the prompt contains 2 non-screenshot images",
+    );
+  });
+
+  it("does not apply the default screenshot retention to user images", () => {
+    const messages = [
+      {
+        role: "user" as const,
+        content: [
+          { type: "image" as const, data: "user-image-1", mimeType: "image/png" as const },
+          { type: "image" as const, data: "user-image-2", mimeType: "image/png" as const },
+          { type: "image" as const, data: "user-image-3", mimeType: "image/png" as const },
+        ],
+        timestamp: 1,
+      },
+      ...["frame-1", "frame-2", "frame-3"].map((frameId) => ({
+        role: "toolResult" as const,
+        toolCallId: frameId,
+        toolName: "computer_observe",
+        content: [
+          { type: "text" as const, text: frameId },
+          { type: "image" as const, data: frameId, mimeType: "image/png" as const },
+        ],
+        details: { frameId },
+        isError: false,
+        timestamp: 1,
+      })),
+    ];
+
+    const pruned = pruneComputerScreenshotContext(messages);
+    expect(pruned[0]).toBe(messages[0]);
+    expect((pruned[0] as (typeof messages)[number]).content).toHaveLength(3);
+    expect(
+      pruned
+        .slice(1)
+        .map((message) =>
+          (message as (typeof messages)[number]).content.some((part) => part.type === "image"),
+        ),
+    ).toEqual([false, true, true]);
+  });
+
   it("reuses the message array when no screenshot needs pruning", () => {
     const messages = [
       {

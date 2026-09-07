@@ -283,9 +283,7 @@ export function ModelSettingsOverlay({ onClose }: { onClose: () => void }) {
               modelId: modelId.trim(),
               reasoning,
               supportsImages,
-              maxImagesPerPrompt: supportsImages
-                ? parsedMaxImagesPerPrompt
-                : DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT,
+              maxImagesPerPrompt: supportsImages ? parsedMaxImagesPerPrompt : undefined,
               apiKey: apiKey.trim() || undefined,
               label: selected.providerName ?? selected.provider,
             }
