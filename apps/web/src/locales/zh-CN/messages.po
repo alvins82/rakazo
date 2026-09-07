@@ -3304,7 +3304,7 @@ msgstr "支持思考"
 #: src/pages/ModelSettingsOverlay.tsx:508
 #: src/pages/Onboarding.tsx:425
 msgid "Supports images"
-msgstr ""
+msgstr "支持图片"
 
 #: src/pages/PluginsOverlay.tsx:486
 msgid "Add GraphQL"

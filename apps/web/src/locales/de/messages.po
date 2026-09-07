@@ -3304,7 +3304,7 @@ msgstr "Unterstützt Denkmodus"
 #: src/pages/ModelSettingsOverlay.tsx:508
 #: src/pages/Onboarding.tsx:425
 msgid "Supports images"
-msgstr ""
+msgstr "Unterstützt Bilder"
 
 #: src/pages/PluginsOverlay.tsx:486
 msgid "Add GraphQL"

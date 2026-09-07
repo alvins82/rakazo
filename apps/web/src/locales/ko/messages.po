@@ -3304,7 +3304,7 @@ msgstr "사고 모드 지원"
 #: src/pages/ModelSettingsOverlay.tsx:508
 #: src/pages/Onboarding.tsx:425
 msgid "Supports images"
-msgstr ""
+msgstr "이미지 지원"
 
 #: src/pages/PluginsOverlay.tsx:486
 msgid "Add GraphQL"
