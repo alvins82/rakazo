@@ -30,8 +30,8 @@ import {
   ATTACHMENT_MAX_BYTES,
   BotSecretName,
   BotSecretSubmission,
-  OPENAI_COMPATIBLE_PROVIDER_ID,
   isAttachmentImageMimeType,
+  OPENAI_COMPATIBLE_PROVIDER_ID,
 } from "@rakazo/contracts";
 import {
   type ActionApprovalRule,
