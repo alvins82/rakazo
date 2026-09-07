@@ -25,7 +25,6 @@ import type {
   AgentToolExecutionResult,
   ConnectorTool,
 } from "@rakazo/adapter-kit";
-import { DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT } from "@rakazo/contracts";
 import { getLogger } from "@rakazo/logging";
 import { isToolPauseResult } from "./approval-effect.js";
 import { builtinAgentTools, DELEGATION_TOOL_NAMES } from "./builtin-tools.js";
@@ -62,6 +61,7 @@ const SILENT_TOOL_CONTINUATION_PROMPT =
   "Continue the original task from the latest tool result. Do not stop after a tool call; use any remaining tools needed, then give the user the final answer.";
 const TOOL_FINAL_RESPONSE_FALLBACK =
   "I completed the tool step but could not produce a final response. Please ask me to continue.";
+const DEFAULT_COMPUTER_SCREENSHOTS_TO_KEEP = 2;
 // Reasoning-capable models must not start at "off": for OpenRouter, pi-ai maps
 // that to reasoning.effort "none", which 400s on endpoints that mandate
 // reasoning (e.g. google/gemini-3.7-flash). Keep a real level when model.reasoning
@@ -1202,8 +1202,8 @@ export function pruneComputerScreenshotContext(
       ? undefined
       : Number.isFinite(maxImagesPerPrompt)
         ? Math.max(0, Math.floor(maxImagesPerPrompt))
-        : DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT;
-  let remaining = imageLimit ?? DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT;
+        : DEFAULT_COMPUTER_SCREENSHOTS_TO_KEEP;
+  let remaining = imageLimit ?? DEFAULT_COMPUTER_SCREENSHOTS_TO_KEEP;
   if (imageLimit !== undefined) {
     const nonScreenshotImages = messages.reduce(
       (count, message) =>

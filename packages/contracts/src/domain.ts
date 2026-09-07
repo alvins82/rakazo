@@ -862,9 +862,6 @@ export const ThreadSnapshotSchema = z.object({
 });
 export type ThreadSnapshot = z.infer<typeof ThreadSnapshotSchema>;
 
-/** Default number of computer screenshots retained when a model has no image-limit override. */
-export const DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT = 2;
-
 /** Parse the optional per-connection image limit entered in model settings. */
 export function parseModelMaxImagesPerPrompt(
   value: string,
