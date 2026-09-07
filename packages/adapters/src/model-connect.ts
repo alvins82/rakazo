@@ -1,6 +1,7 @@
 import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
 import type { ModelConnectInput, ModelCredential, ThinkingLevel } from "@rakazo/contracts";
 import { OPENAI_COMPATIBLE_PROVIDER_ID as CONTRACT_OPENAI_COMPAT } from "@rakazo/contracts";
+import { modelIdSupportsImages, updateModelImageCapabilities } from "./model-vision.js";
 import { parseModelSecret, type StoredModelSecret, serializeModelSecret } from "./pi-oauth.js";
 import {
   OPENAI_COMPATIBLE_PROVIDER_ID,
@@ -15,22 +16,29 @@ export function buildModelConnectPlaintext(
   if (input.provider === OPENAI_COMPATIBLE_PROVIDER_ID) {
     const prepared = prepareOpenAiCompatibleConnect(input);
     const previous = previousPlaintext ? parseModelSecret(previousPlaintext) : undefined;
-    if (
-      input.apiKey === undefined &&
-      previous?.kind === "openai_compatible" &&
-      previous.baseUrl === prepared.baseUrl
-    ) {
+    const sameEndpoint =
+      previous?.kind === "openai_compatible" && previous.baseUrl === prepared.baseUrl;
+    if (input.apiKey === undefined && sameEndpoint) {
       // Revalidate the inherited key too: public endpoints must still use HTTPS.
       prepared.apiKey = prepareOpenAiCompatibleConnect({
         ...input,
         apiKey: previous.apiKey,
       }).apiKey;
     }
+    const previousVisionModelIds = sameEndpoint ? previous.visionModelIds : undefined;
+    const visionModelIds = updateModelImageCapabilities(
+      previousVisionModelIds,
+      prepared.modelId,
+      input.supportsImages,
+    );
     const secret: StoredModelSecret = {
       kind: "openai_compatible",
       baseUrl: prepared.baseUrl,
       ...(input.reasoning !== undefined ? { reasoning: input.reasoning } : {}),
       ...(prepared.apiKey ? { apiKey: prepared.apiKey } : {}),
+      ...(input.supportsImages !== undefined || previousVisionModelIds !== undefined
+        ? { visionModelIds }
+        : {}),
     };
     return serializeModelSecret(secret);
   }
@@ -70,6 +78,10 @@ export function modelCredentialDto(
   if (parsed.kind !== "openai_compatible") return compatibleCredential;
   return {
     ...compatibleCredential,
+    supportsImages:
+      parsed.visionModelIds !== undefined
+        ? modelIdSupportsImages(parsed.visionModelIds, row.defaultModel)
+        : compatibleCredential.supportsImages,
     baseUrl: parsed.baseUrl,
     reasoning: parsed.reasoning ?? false,
     thinkingLevels: getSupportedThinkingLevels(

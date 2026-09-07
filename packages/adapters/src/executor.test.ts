@@ -12,6 +12,7 @@ import {
   settleSteeringAttachmentLoads,
   threadContextForRun,
 } from "./executor.js";
+import { serializeModelSecret } from "./pi-oauth.js";
 
 describe("run workspace checkpoint", () => {
   it("skips clean turns and flushes once after a mutation", async () => {
@@ -1037,6 +1038,67 @@ description: Prepare standup notes
         where: expect.objectContaining({ credential: { provider: "xai" } }),
       }),
     );
+  });
+
+  it("keeps image support for a separately enabled bot model override", async () => {
+    const provider = "openai-compatible";
+    const findFirst = vi.fn(
+      async (args: { where: { credential?: { provider?: string }; isDefault?: boolean } }) => {
+        if (args.where.credential?.provider === provider || args.where.isDefault) {
+          return modelPreference({
+            provider,
+            secretId: "secret-openai-compatible",
+            modelId: "space-model",
+            isDefault: Boolean(args.where.isDefault),
+          });
+        }
+        return null;
+      },
+    );
+    const plaintext = serializeModelSecret({
+      kind: "openai_compatible",
+      baseUrl: "http://127.0.0.1:8000/v1",
+      visionModelIds: ["bot-vision-model"],
+    });
+    const bot = {
+      modelProvider: provider,
+      modelId: "bot-vision-model",
+      thinkingLevel: null,
+    };
+    const prisma = {
+      bot: { findFirst: vi.fn(async () => bot) },
+      spaceModelPreference: { findFirst },
+      userModelCredential: { findFirst: vi.fn(async () => null) },
+      deploymentSettings: { findUnique: vi.fn(async () => null) },
+      secret: {
+        findFirst: vi.fn(async () => ({
+          id: "secret-openai-compatible",
+          ciphertext: plaintext,
+        })),
+        findUnique: vi.fn(async () => null),
+      },
+    } as unknown as PrismaClient;
+    const executor = createRunExecutor({
+      prisma,
+      secretStore: { load: vi.fn(() => plaintext), put: vi.fn() },
+    } as unknown as Parameters<typeof createRunExecutor>[0]);
+
+    await expect(
+      executor.resolveModel({ userId: "user-1", spaceId: "ws-1", botId: "bot-1" }),
+    ).resolves.toMatchObject({
+      provider,
+      id: "bot-vision-model",
+      acceptsImages: true,
+    });
+
+    bot.modelId = "text-only-model";
+    await expect(
+      executor.resolveModel({ userId: "user-1", spaceId: "ws-1", botId: "bot-1" }),
+    ).resolves.toMatchObject({
+      provider,
+      id: "text-only-model",
+      acceptsImages: false,
+    });
   });
 
   it("falls back to the Space default when the override provider has no credential", async () => {

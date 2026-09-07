@@ -52,7 +52,13 @@ const SIGN_IN_START_WAIT_MS = 30_000;
 export type StoredModelSecret =
   | { kind: "api_key"; key: string }
   | { kind: "oauth"; credential: OAuthCredential }
-  | { kind: "openai_compatible"; baseUrl: string; apiKey?: string; reasoning?: boolean };
+  | {
+      kind: "openai_compatible";
+      baseUrl: string;
+      apiKey?: string;
+      reasoning?: boolean;
+      visionModelIds?: string[];
+    };
 
 export type PiOAuthConnected = {
   status: "connected";
@@ -120,11 +126,18 @@ export function parseModelSecret(plaintext: string): StoredModelSecret {
         parsed.baseUrl.trim()
       ) {
         const apiKey = typeof parsed.apiKey === "string" ? parsed.apiKey : undefined;
+        const visionModelIds = Array.isArray(parsed.visionModelIds)
+          ? parsed.visionModelIds.filter(
+              (modelId): modelId is string =>
+                typeof modelId === "string" && modelId.trim().length > 0,
+            )
+          : undefined;
         return {
           kind: "openai_compatible",
           baseUrl: parsed.baseUrl.trim(),
           ...(apiKey ? { apiKey } : {}),
           ...(typeof parsed.reasoning === "boolean" ? { reasoning: parsed.reasoning } : {}),
+          ...(visionModelIds ? { visionModelIds } : {}),
         };
       }
       if (
@@ -150,6 +163,7 @@ export function serializeModelSecret(secret: StoredModelSecret): string {
       baseUrl: secret.baseUrl,
       ...(secret.apiKey ? { apiKey: secret.apiKey } : {}),
       ...(secret.reasoning !== undefined ? { reasoning: secret.reasoning } : {}),
+      ...(secret.visionModelIds !== undefined ? { visionModelIds: secret.visionModelIds } : {}),
     });
   }
   return secret.key;
