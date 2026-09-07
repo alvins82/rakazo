@@ -484,6 +484,9 @@ export const ZH_MESSAGES: Record<string, string> = {
   Advanced: "高级",
   "Supports thinking": "支持思考",
   "Supports images": "支持图像",
+  "Maximum images per request": "每次请求的最大图像数",
+  "Enter a whole number from 1 to 1000 for the image limit.":
+    "请输入 1 到 1000 之间的整数作为图像限制。",
   Agent: "智能体",
   archived: "已归档",
   Attachment: "附件",

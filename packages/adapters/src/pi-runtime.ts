@@ -235,10 +235,7 @@ export class PiAgentRuntime implements AgentRuntime {
             models.streamSimple(m, ctx, reliableStreamOptions(m, options)),
           getApiKey: async () => apiKey,
           transformContext: async (messages) =>
-            pruneComputerScreenshotContext(
-              messages,
-              request.model.maxImagesPerPrompt ?? DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT,
-            ),
+            pruneComputerScreenshotContext(messages, request.model.maxImagesPerPrompt),
           prepareNextTurnWithContext: async () => {
             if (!request.claimSteering) return undefined;
             const steering = await request.claimSteering([...seenSteeringIds]);
@@ -992,10 +989,7 @@ async function executeSubagent(host: ToolHost, executionId: string, args: Record
       selectedModel.models.streamSimple(m, ctx, reliableStreamOptions(m, options)),
     getApiKey: async () => selectedModel.apiKey,
     transformContext: async (messages) =>
-      pruneComputerScreenshotContext(
-        messages,
-        host.request.model.maxImagesPerPrompt ?? DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT,
-      ),
+      pruneComputerScreenshotContext(messages, host.request.model.maxImagesPerPrompt),
     initialState: {
       systemPrompt: [
         `You are a Rakazo subagent named "${name}".`,
@@ -1201,15 +1195,28 @@ function builtinParameters(tool: ConnectorTool) {
 /** Keep recent visual state while respecting an optional model image budget. */
 export function pruneComputerScreenshotContext(
   messages: AgentMessage[],
-  maxImagesPerPrompt = DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT,
+  maxImagesPerPrompt?: number,
 ): AgentMessage[] {
-  let remaining = Number.isFinite(maxImagesPerPrompt)
-    ? Math.max(0, Math.floor(maxImagesPerPrompt))
-    : DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT;
-  for (const message of messages) {
-    if (!isComputerScreenshotMessage(message)) remaining -= imagePartCount(message);
+  const imageLimit =
+    maxImagesPerPrompt === undefined
+      ? undefined
+      : Number.isFinite(maxImagesPerPrompt)
+        ? Math.max(0, Math.floor(maxImagesPerPrompt))
+        : DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT;
+  let remaining = imageLimit ?? DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT;
+  if (imageLimit !== undefined) {
+    const nonScreenshotImages = messages.reduce(
+      (count, message) =>
+        isComputerScreenshotMessage(message) ? count : count + imagePartCount(message),
+      0,
+    );
+    if (nonScreenshotImages > imageLimit) {
+      throw new Error(
+        `The configured model image limit is ${imageLimit}, but the prompt contains ${nonScreenshotImages} non-screenshot images.`,
+      );
+    }
+    remaining = imageLimit - nonScreenshotImages;
   }
-  remaining = Math.max(0, remaining);
   let transformed: AgentMessage[] | undefined;
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index];
