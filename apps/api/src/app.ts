@@ -52,6 +52,7 @@ import {
   pushTokenPath,
   type RemoteConnectorDependencies,
   reconcileCloudAgents,
+  removePiUserSessions,
   ScriptedAgentRuntime,
   SmtpEmailProvider,
   SpaceMemoryProviderResolver,
@@ -284,7 +285,7 @@ export async function createApp(
     beforeDeleteUser: async (userId) => {
       const bots = await prisma.bot.findMany({
         where: { userId },
-        select: { id: true, spaceId: true, name: true, archivedAt: true },
+        select: { id: true, userId: true, spaceId: true, name: true, archivedAt: true },
       });
       await Promise.all(
         bots.map((bot) =>
@@ -303,6 +304,9 @@ export async function createApp(
           ),
         ),
       );
+      await removePiUserSessions(env.dataDir, userId).catch((error) => {
+        getLogger().warn("Pi user session cleanup failed", { userId, error });
+      });
       await rm(pushTokenPath(env.dataDir, userId), { force: true }).catch(() => undefined);
     },
   });

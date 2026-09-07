@@ -225,12 +225,15 @@ export class PiAgentRuntime implements AgentRuntime {
             : "You are a Rakazo bot with a persistent sandbox filesystem and shell. Be concise.");
         const thinkingLevel = thinkingLevelFor(model, request.model.thinkingLevel);
         let piSession: PiSessionHandle | undefined;
-        if (this.sessionRecorder) {
+        // Never write an unscoped transcript. Production requests carry userId;
+        // callers without an authenticated context simply skip optional recording.
+        if (this.sessionRecorder && context?.userId) {
           try {
             piSession = await this.sessionRecorder.start({
               runId: request.runId,
               threadId: request.threadId,
               botId: request.botId,
+              userId: context.userId,
               traceId: context?.traceId,
               provider: model.provider,
               model: model.id,
@@ -877,7 +880,7 @@ function toAgentTool(tool: ConnectorTool, host: ToolHost, exposedName: string): 
           ...(host.pausePending ? { paused: true } : {}),
         };
         try {
-          await host.request.onToolCompleted?.(completion);
+          void Promise.resolve(host.request.onToolCompleted?.(completion)).catch(() => undefined);
         } catch {
           // Audit hooks are best effort and must never change tool behavior.
         }

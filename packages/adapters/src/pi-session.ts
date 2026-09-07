@@ -1,12 +1,119 @@
+import type { Dirent } from "node:fs";
+import { readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { type AgentMessage, JsonlSessionRepo, type Session } from "@earendil-works/pi-agent-core";
 import { NodeExecutionEnv } from "@earendil-works/pi-agent-core/node";
 import { getLogger } from "@rakazo/logging";
 
+export const PI_SESSION_RETENTION_DAYS = 30;
+export const PI_SESSION_MAX_FILES_PER_BOT = 100;
+
+const PI_SESSION_RETENTION_MS = PI_SESSION_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+
+function sessionScopeSegment(value: string, label: string): string {
+  if (!value) throw new Error(`${label} must be non-empty`);
+  return Buffer.from(value, "utf8").toString("base64url");
+}
+
+export function piSessionUserRoot(sessionsRoot: string, userId: string): string {
+  return path.join(path.resolve(sessionsRoot), sessionScopeSegment(userId, "userId"));
+}
+
+export function piSessionBotRoot(sessionsRoot: string, userId: string, botId: string): string {
+  return path.join(piSessionUserRoot(sessionsRoot, userId), sessionScopeSegment(botId, "botId"));
+}
+
+export function piSessionsRoot(dataDir: string): string {
+  return path.resolve(dataDir, "pi-sessions");
+}
+
+export async function removePiBotSessions(
+  dataDir: string | undefined,
+  userId: string | undefined,
+  botId: string,
+): Promise<void> {
+  if (!dataDir || !userId) return;
+  await rm(piSessionBotRoot(piSessionsRoot(dataDir), userId, botId), {
+    recursive: true,
+    force: true,
+  });
+}
+
+export async function removePiUserSessions(
+  dataDir: string | undefined,
+  userId: string,
+): Promise<void> {
+  if (!dataDir) return;
+  await rm(piSessionUserRoot(piSessionsRoot(dataDir), userId), {
+    recursive: true,
+    force: true,
+  });
+}
+
+export interface PiSessionRetentionOptions {
+  now?: number;
+  maxAgeMs?: number;
+  maxFiles?: number;
+}
+
+interface PiSessionFile {
+  path: string;
+  mtimeMs: number;
+}
+
+async function collectPiSessionFiles(directory: string, files: PiSessionFile[]): Promise<void> {
+  let entries: Dirent[];
+  try {
+    entries = await readdir(directory, { withFileTypes: true });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+    throw error;
+  }
+
+  await Promise.all(
+    entries.map(async (entry) => {
+      const filePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await collectPiSessionFiles(filePath, files);
+        return;
+      }
+      if (!entry.isFile() || !entry.name.endsWith(".jsonl")) return;
+      const details = await stat(filePath);
+      files.push({ path: filePath, mtimeMs: details.mtimeMs });
+    }),
+  );
+}
+
+export async function prunePiSessionFiles(
+  root: string,
+  options: PiSessionRetentionOptions = {},
+): Promise<void> {
+  const maxAgeMs = options.maxAgeMs ?? PI_SESSION_RETENTION_MS;
+  const maxFiles = options.maxFiles ?? PI_SESSION_MAX_FILES_PER_BOT;
+  if (!Number.isFinite(maxAgeMs) || maxAgeMs < 0) {
+    throw new RangeError("maxAgeMs must be a non-negative finite number");
+  }
+  if (!Number.isInteger(maxFiles) || maxFiles < 1) {
+    throw new RangeError("maxFiles must be a positive integer");
+  }
+
+  const files: PiSessionFile[] = [];
+  await collectPiSessionFiles(root, files);
+  const cutoff = (options.now ?? Date.now()) - maxAgeMs;
+  const expired = files.filter((file) => file.mtimeMs < cutoff);
+  const retained = files.filter((file) => file.mtimeMs >= cutoff);
+  retained.sort((left, right) => right.mtimeMs - left.mtimeMs);
+
+  await Promise.all(
+    [...expired, ...retained.slice(maxFiles)].map((file) => rm(file.path, { force: true })),
+  );
+}
+
 export interface PiSessionStart {
   runId: string;
   threadId: string;
   botId: string;
+  userId: string;
   traceId?: string;
   provider: string;
   model: string;
@@ -30,22 +137,26 @@ export interface PiSessionRecorder {
  */
 export class PiJsonlSessionRecorder implements PiSessionRecorder {
   private readonly cwd: string;
-  private readonly repo: JsonlSessionRepo;
+  private readonly sessionsRoot: string;
+  private readonly fs: NodeExecutionEnv;
 
   constructor(sessionsRoot: string, cwd = process.cwd()) {
     this.cwd = path.resolve(cwd);
-    const fs = new NodeExecutionEnv({ cwd: this.cwd });
-    this.repo = new JsonlSessionRepo({
-      fs,
-      sessionsRoot: path.resolve(sessionsRoot),
-    });
+    this.sessionsRoot = path.resolve(sessionsRoot);
+    this.fs = new NodeExecutionEnv({ cwd: this.cwd });
   }
 
   async start(input: PiSessionStart): Promise<PiSessionHandle> {
-    const session = await this.repo.create({
+    const sessionsRoot = piSessionBotRoot(this.sessionsRoot, input.userId, input.botId);
+    const repo = new JsonlSessionRepo({
+      fs: this.fs,
+      sessionsRoot,
+    });
+    const session = await repo.create({
       id: input.runId,
       cwd: this.cwd,
       metadata: {
+        rakazoUserId: input.userId,
         rakazoBotId: input.botId,
         rakazoRunId: input.runId,
         rakazoThreadId: input.threadId,
@@ -54,6 +165,15 @@ export class PiJsonlSessionRecorder implements PiSessionRecorder {
         provider: input.provider,
       },
     });
+    try {
+      await prunePiSessionFiles(sessionsRoot);
+    } catch (error) {
+      getLogger().warn("Pi session retention cleanup failed", {
+        userId: input.userId,
+        botId: input.botId,
+        error,
+      });
+    }
     const handle = new BestEffortPiSession(session, input.runId);
 
     await handle.appendCustomEntry("rakazo_context", {

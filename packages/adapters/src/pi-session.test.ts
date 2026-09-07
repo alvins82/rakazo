@@ -1,9 +1,18 @@
-import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, rm, utimes, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { describe, expect, it } from "vitest";
-import { PiJsonlSessionRecorder } from "./pi-session.js";
+import {
+  PI_SESSION_MAX_FILES_PER_BOT,
+  PI_SESSION_RETENTION_DAYS,
+  PiJsonlSessionRecorder,
+  piSessionBotRoot,
+  piSessionUserRoot,
+  prunePiSessionFiles,
+  removePiBotSessions,
+  removePiUserSessions,
+} from "./pi-session.js";
 
 async function readFiles(root: string): Promise<string> {
   const entries = await readdir(root, { withFileTypes: true }).catch(() => []);
@@ -25,6 +34,7 @@ describe("Pi JSONL sessions", () => {
         runId: "run-1",
         threadId: "thread-1",
         botId: "bot-1",
+        userId: "user-1",
         traceId: "trace-1",
         provider: "openai-compatible",
         model: "qwen-test",
@@ -61,6 +71,70 @@ describe("Pi JSONL sessions", () => {
       expect(raw).toContain("I should answer.");
       expect(raw).toContain("rawStopReason");
       expect(raw).toContain("eos");
+      expect(
+        await readFiles(piSessionBotRoot(path.join(root, "sessions"), "user-1", "bot-1")),
+      ).toContain("run-1");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps sessions scoped and bounded by the retention policy", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "rakazo-pi-retention-"));
+    try {
+      const sessionsRoot = path.join(root, "sessions");
+      const botRoot = piSessionBotRoot(sessionsRoot, "user-1", "bot-1");
+      const otherBotRoot = piSessionBotRoot(sessionsRoot, "user-1", "bot-2");
+      const now = Date.now();
+      await mkdir(botRoot, { recursive: true });
+      await mkdir(otherBotRoot, { recursive: true });
+      const old = path.join(botRoot, "old.jsonl");
+      const newest = path.join(botRoot, "newest.jsonl");
+      const middle = path.join(botRoot, "middle.jsonl");
+      const overflow = path.join(botRoot, "overflow.jsonl");
+      await Promise.all(
+        [old, newest, middle, overflow].map((filePath) => writeFile(filePath, "{}\n")),
+      );
+      await Promise.all([
+        utimes(old, new Date(now - 2_000), new Date(now - 2_000)),
+        utimes(newest, new Date(now - 100), new Date(now - 100)),
+        utimes(middle, new Date(now - 200), new Date(now - 200)),
+        utimes(overflow, new Date(now - 300), new Date(now - 300)),
+      ]);
+
+      await prunePiSessionFiles(botRoot, { now, maxAgeMs: 1_000, maxFiles: 2 });
+
+      await expect(readFile(old)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(readFile(overflow)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(readFile(newest, "utf8")).resolves.toBe("{}\n");
+      await expect(readFile(middle, "utf8")).resolves.toBe("{}\n");
+      expect(await readdir(piSessionUserRoot(sessionsRoot, "user-1"))).toHaveLength(2);
+      expect(PI_SESSION_RETENTION_DAYS).toBe(30);
+      expect(PI_SESSION_MAX_FILES_PER_BOT).toBe(100);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("removes bot and account session scopes", async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), "rakazo-pi-cleanup-"));
+    try {
+      const sessionsRoot = path.join(root, "pi-sessions");
+      const botRoot = piSessionBotRoot(sessionsRoot, "user-1", "bot-1");
+      const otherBotRoot = piSessionBotRoot(sessionsRoot, "user-1", "bot-2");
+      await mkdir(botRoot, { recursive: true });
+      await mkdir(otherBotRoot, { recursive: true });
+      await writeFile(path.join(botRoot, "session.jsonl"), "{}\n");
+      await writeFile(path.join(otherBotRoot, "session.jsonl"), "{}\n");
+
+      await removePiBotSessions(root, "user-1", "bot-1");
+      await expect(readdir(botRoot)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(readdir(otherBotRoot)).resolves.toHaveLength(1);
+
+      await removePiUserSessions(root, "user-1");
+      await expect(readdir(piSessionUserRoot(sessionsRoot, "user-1"))).rejects.toMatchObject({
+        code: "ENOENT",
+      });
     } finally {
       await rm(root, { recursive: true, force: true });
     }

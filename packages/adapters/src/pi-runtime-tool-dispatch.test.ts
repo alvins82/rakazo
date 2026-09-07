@@ -567,6 +567,52 @@ describe("Pi connector tool dispatch", () => {
     });
   });
 
+  it("does not wait for a slow tool completion hook", async () => {
+    let resolveAudit!: () => void;
+    const audit = new Promise<void>((resolve) => {
+      resolveAudit = resolve;
+    });
+    const onToolCompleted = vi.fn(() => audit);
+    let settled = false;
+    const runtime = new PiAgentRuntime();
+    const run = (async () => {
+      for await (const _event of runtime.run(
+        {
+          botId: "b",
+          threadId: "t",
+          runId: "non-blocking-audit",
+          prompt: "send the update",
+          instructions: "Use the destination tool.",
+          history: [],
+          tools: [destinationTool],
+          model: { provider: "test", id: "dispatch-test-model" },
+          executeTool: vi.fn(async () => ({ ok: true })),
+          onToolCompleted,
+        },
+        {
+          operationId: "non-blocking-audit",
+          traceId: "non-blocking-audit",
+          spaceId: "w",
+          userId: "u",
+          signal: new AbortController().signal,
+        },
+      )) {
+        // Exhaust the runtime event stream.
+      }
+    })().finally(() => {
+      settled = true;
+    });
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      expect(settled).toBe(true);
+      expect(onToolCompleted).toHaveBeenCalledOnce();
+    } finally {
+      resolveAudit();
+      await run;
+    }
+  });
+
   it("makes an unfinished tool turn visible instead of completing silently", async () => {
     fakeAgentState.mode = "silent-continuation";
     fakeAgentState.emitFinalAfterFollowUp = false;

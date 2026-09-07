@@ -13,6 +13,7 @@ import {
   settleSteeringAttachmentLoads,
   threadContextForRun,
   toolCompletionAuditPayload,
+  toolCompletionFromResult,
 } from "./executor.js";
 
 describe("tool completion audit", () => {
@@ -77,6 +78,26 @@ describe("tool completion audit", () => {
         }),
       }),
     );
+  });
+
+  it("records rejected scripted tool results as errors", () => {
+    const completion = toolCompletionFromResult(
+      { name: "destination.write", executionId: "call-1", durationMs: 4 },
+      { error: "destination rejected the record" },
+    );
+
+    expect(completion).toEqual({
+      name: "destination.write",
+      executionId: "call-1",
+      durationMs: 4,
+      error: "destination rejected the record",
+      paused: false,
+    });
+    expect(toolCompletionAuditPayload(completion)).toMatchObject({
+      outcome: "error",
+      error: "destination rejected the record",
+    });
+    expect(completion).not.toHaveProperty("result");
   });
 });
 

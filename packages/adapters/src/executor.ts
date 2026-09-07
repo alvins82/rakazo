@@ -496,6 +496,21 @@ function isAuditableToolResult(value: unknown): value is {
   );
 }
 
+function isFailedToolResult(value: unknown): value is { error: unknown } {
+  if (!value || typeof value !== "object" || !("error" in value)) return false;
+  const error = (value as { error?: unknown }).error;
+  return error !== undefined && error !== null;
+}
+
+export function toolCompletionFromResult(
+  base: Pick<AgentToolCompletion, "name" | "executionId" | "durationMs">,
+  result: unknown,
+): AgentToolCompletion {
+  const paused = isToolPauseResult(result);
+  if (isFailedToolResult(result)) return { ...base, error: result.error, paused };
+  return { ...base, result, paused };
+}
+
 export function toolCompletionAuditPayload(
   completion: AgentToolCompletion,
   secrets: string[] = [],
@@ -3559,13 +3574,14 @@ export function createRunExecutor(deps: ExecutorDeps) {
                       botId: bot.id,
                       runId,
                     },
-                    {
-                      name: event.name,
-                      executionId: event.executionId,
-                      durationMs: Date.now() - startedAt,
+                    toolCompletionFromResult(
+                      {
+                        name: event.name,
+                        executionId: event.executionId,
+                        durationMs: Date.now() - startedAt,
+                      },
                       result,
-                      paused: isToolPauseResult(result),
-                    },
+                    ),
                     runSecrets,
                   );
                   if (isToolPauseResult(result)) return;
