@@ -239,7 +239,7 @@ describe("Pi computer tool dispatch", () => {
     );
   });
 
-  it("does not apply the default screenshot retention to user images", () => {
+  it("applies the default image budget to user images", () => {
     const messages = [
       {
         role: "user" as const,
@@ -264,16 +264,9 @@ describe("Pi computer tool dispatch", () => {
       })),
     ];
 
-    const pruned = pruneComputerScreenshotContext(messages);
-    expect(pruned[0]).toBe(messages[0]);
-    expect((pruned[0] as (typeof messages)[number]).content).toHaveLength(3);
-    expect(
-      pruned
-        .slice(1)
-        .map((message) =>
-          (message as (typeof messages)[number]).content.some((part) => part.type === "image"),
-        ),
-    ).toEqual([false, true, true]);
+    expect(() => pruneComputerScreenshotContext(messages)).toThrow(
+      "the prompt contains 3 non-screenshot images",
+    );
   });
 
   it("reuses the message array when no screenshot needs pruning", () => {
