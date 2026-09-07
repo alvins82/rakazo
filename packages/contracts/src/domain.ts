@@ -862,6 +862,9 @@ export const ThreadSnapshotSchema = z.object({
 });
 export type ThreadSnapshot = z.infer<typeof ThreadSnapshotSchema>;
 
+/** Default visual context retained when a model connection has no image-limit override. */
+export const DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT = 2;
+
 export const ModelCredentialSchema = z.object({
   id: Id,
   provider: z.string(),
@@ -872,6 +875,7 @@ export const ModelCredentialSchema = z.object({
   modelId: z.string().optional(),
   reasoning: z.boolean().optional(),
   supportsImages: z.boolean().optional(),
+  maxImagesPerPrompt: z.number().int().min(1).max(1000).optional(),
   thinkingLevels: z.array(ThinkingLevelSchema).optional(),
 });
 export type ModelCredential = z.infer<typeof ModelCredentialSchema>;
@@ -887,6 +891,7 @@ export const ModelConnectInputSchema = z
     modelId: z.string().optional(),
     reasoning: z.boolean().optional(),
     supportsImages: z.boolean().optional(),
+    maxImagesPerPrompt: z.number().int().min(1).max(1000).optional(),
   })
   .superRefine((value, ctx) => {
     if (value.provider === OPENAI_COMPATIBLE_PROVIDER_ID) {

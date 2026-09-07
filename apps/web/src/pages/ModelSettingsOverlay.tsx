@@ -1,6 +1,7 @@
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import type { Me } from "@rakazo/contracts";
 import {
+  DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT,
   OPENAI_COMPATIBLE_PROVIDER_ID,
   openAiCompatibleConnectReady,
   openAiCompatibleProbeSuccessMessage,
@@ -55,6 +56,9 @@ export function ModelSettingsOverlay({
   const [baseUrl, setBaseUrl] = useState("");
   const [reasoning, setReasoning] = useState(false);
   const [supportsImages, setSupportsImages] = useState(false);
+  const [maxImagesPerPrompt, setMaxImagesPerPrompt] = useState(
+    String(DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT),
+  );
   const [{ models: probeModels, baseUrl: probedBaseUrl, probing }, setProbe] =
     useState(initialModelProbeState);
   const [modelProbe] = useState(() => createModelProbe(setProbe));
@@ -123,6 +127,9 @@ export function ModelSettingsOverlay({
         setBaseUrl(nextCredential?.baseUrl ?? "");
         setReasoning(nextCredential?.reasoning ?? false);
         setSupportsImages(nextCredential?.supportsImages ?? false);
+        setMaxImagesPerPrompt(
+          String(nextCredential?.maxImagesPerPrompt ?? DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT),
+        );
       }
     }
   }
@@ -203,6 +210,9 @@ export function ModelSettingsOverlay({
     setProvider(nextProvider);
     setReasoning(nextCredential?.reasoning ?? false);
     setSupportsImages(nextCredential?.supportsImages ?? false);
+    setMaxImagesPerPrompt(
+      String(nextCredential?.maxImagesPerPrompt ?? DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT),
+    );
     setModelId(
       nextProvider === OPENAI_COMPATIBLE_PROVIDER_ID
         ? (nextCredential?.modelId ?? "")
@@ -260,6 +270,16 @@ export function ModelSettingsOverlay({
     } else if (!apiKey.trim()) {
       return;
     }
+    const parsedMaxImagesPerPrompt = Number(maxImagesPerPrompt);
+    if (
+      supportsImages &&
+      (!Number.isInteger(parsedMaxImagesPerPrompt) ||
+        parsedMaxImagesPerPrompt < 1 ||
+        parsedMaxImagesPerPrompt > 1000)
+    ) {
+      setError(t`Enter a whole number from 1 to 1000 for the image limit.`);
+      return;
+    }
     setError(null);
     setNotice(null);
     setPending("connect");
@@ -272,6 +292,9 @@ export function ModelSettingsOverlay({
               modelId: modelId.trim(),
               reasoning,
               supportsImages,
+              maxImagesPerPrompt: supportsImages
+                ? parsedMaxImagesPerPrompt
+                : DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT,
               apiKey: apiKey.trim() || undefined,
               label: selected.providerName ?? selected.provider,
             }
@@ -516,6 +539,13 @@ export function ModelSettingsOverlay({
                         setNotice(null);
                       }}
                       imagesLabel={t`Supports images`}
+                      maxImagesPerPrompt={maxImagesPerPrompt}
+                      onMaxImagesPerPromptChange={(value) => {
+                        selectionRevisionRef.current += 1;
+                        setMaxImagesPerPrompt(value);
+                        setNotice(null);
+                      }}
+                      maxImagesLabel={t`Maximum images per request`}
                     />
                   </>
                 ) : (

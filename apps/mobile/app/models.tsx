@@ -1,5 +1,6 @@
 import type { ModelOAuthBegin } from "@rakazo/contracts";
 import {
+  DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT,
   OPENAI_COMPATIBLE_BASE_URL_HINT,
   OPENAI_COMPATIBLE_PROVIDER_ID,
   openAiCompatibleConnectReady,
@@ -47,6 +48,9 @@ export default function Models() {
   const [baseUrl, setBaseUrl] = useState("");
   const [reasoning, setReasoning] = useState(false);
   const [supportsImages, setSupportsImages] = useState(false);
+  const [maxImagesPerPrompt, setMaxImagesPerPrompt] = useState(
+    String(DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT),
+  );
   const [showEndpointHelp, setShowEndpointHelp] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
@@ -113,6 +117,9 @@ export default function Models() {
       setBaseUrl(nextCredential?.baseUrl ?? "");
       setReasoning(nextCredential?.reasoning ?? false);
       setSupportsImages(nextCredential?.supportsImages ?? false);
+      setMaxImagesPerPrompt(
+        String(nextCredential?.maxImagesPerPrompt ?? DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT),
+      );
     }
   }, []);
 
@@ -195,6 +202,9 @@ export default function Models() {
     setProvider(nextProvider);
     setReasoning(nextCredential?.reasoning ?? false);
     setSupportsImages(nextCredential?.supportsImages ?? false);
+    setMaxImagesPerPrompt(
+      String(nextCredential?.maxImagesPerPrompt ?? DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT),
+    );
     setModelId(
       nextProvider === OPENAI_COMPATIBLE_PROVIDER_ID
         ? (nextCredential?.modelId ?? "")
@@ -261,6 +271,16 @@ export default function Models() {
     } else if (!apiKey.trim()) {
       return;
     }
+    const parsedMaxImagesPerPrompt = Number(maxImagesPerPrompt);
+    if (
+      supportsImages &&
+      (!Number.isInteger(parsedMaxImagesPerPrompt) ||
+        parsedMaxImagesPerPrompt < 1 ||
+        parsedMaxImagesPerPrompt > 1000)
+    ) {
+      setError(t("Enter a whole number from 1 to 1000 for the image limit."));
+      return;
+    }
     setError(null);
     setNotice(null);
     setPending("connect");
@@ -274,6 +294,9 @@ export default function Models() {
               modelId: modelId.trim(),
               reasoning,
               supportsImages,
+              maxImagesPerPrompt: supportsImages
+                ? parsedMaxImagesPerPrompt
+                : DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT,
               apiKey: apiKey.trim() || undefined,
               label: selected.providerName ?? selected.provider,
             }
@@ -582,6 +605,20 @@ export default function Models() {
                       value={supportsImages}
                       onValueChange={setSupportsImages}
                       disabled={busy}
+                    />
+                  </View>
+                ) : null}
+                {showAdvanced && supportsImages ? (
+                  <View style={styles.modelRow}>
+                    <Text style={styles.modelLabel}>{t("Maximum images per request")}</Text>
+                    <TextInput
+                      accessibilityLabel={t("Maximum images per request")}
+                      editable={!busy}
+                      keyboardType="number-pad"
+                      maxLength={4}
+                      onChangeText={setMaxImagesPerPrompt}
+                      style={[styles.keyInput, styles.maxImagesInput]}
+                      value={maxImagesPerPrompt}
                     />
                   </View>
                 ) : null}
@@ -981,6 +1018,12 @@ function createModelsStyles() {
       paddingHorizontal: 14,
       marginTop: 4,
       fontSize: 16,
+    },
+    maxImagesInput: {
+      width: 72,
+      height: 40,
+      marginTop: 0,
+      textAlign: "center",
     },
     primaryButton: {
       minHeight: 48,

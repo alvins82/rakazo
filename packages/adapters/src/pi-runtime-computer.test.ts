@@ -149,7 +149,7 @@ describe("Pi computer tool dispatch", () => {
     expect(events.at(-1)?.type).toBe("done");
   });
 
-  it("keeps only the two latest computer screenshots in model context", () => {
+  it("keeps the two latest computer screenshots by default", () => {
     const messages = ["frame-1", "frame-2", "frame-3"].map((frameId) => ({
       role: "toolResult" as const,
       toolCallId: frameId,
@@ -169,6 +169,57 @@ describe("Pi computer tool dispatch", () => {
         (message as (typeof messages)[number]).content.some((part) => part.type === "image"),
       ),
     ).toEqual([false, true, true]);
+  });
+
+  it("honors a model-specific one-image limit", () => {
+    const messages = ["frame-1", "frame-2", "frame-3"].map((frameId) => ({
+      role: "toolResult" as const,
+      toolCallId: frameId,
+      toolName: "computer_observe",
+      content: [
+        { type: "text" as const, text: frameId },
+        { type: "image" as const, data: frameId, mimeType: "image/png" as const },
+      ],
+      details: { frameId },
+      isError: false,
+      timestamp: 1,
+    }));
+
+    const pruned = pruneComputerScreenshotContext(messages, 1);
+    expect(
+      pruned.map((message) =>
+        (message as (typeof messages)[number]).content.some((part) => part.type === "image"),
+      ),
+    ).toEqual([false, false, true]);
+  });
+
+  it("reserves the image budget for user attachments", () => {
+    const messages = [
+      {
+        role: "user" as const,
+        content: [{ type: "image" as const, data: "user-image", mimeType: "image/png" as const }],
+        timestamp: 1,
+      },
+      ...["frame-1", "frame-2"].map((frameId) => ({
+        role: "toolResult" as const,
+        toolCallId: frameId,
+        toolName: "computer_observe",
+        content: [
+          { type: "text" as const, text: frameId },
+          { type: "image" as const, data: frameId, mimeType: "image/png" as const },
+        ],
+        details: { frameId },
+        isError: false,
+        timestamp: 1,
+      })),
+    ];
+
+    const pruned = pruneComputerScreenshotContext(messages, 2);
+    expect(
+      pruned.map((message) =>
+        (message as (typeof messages)[number]).content.some((part) => part.type === "image"),
+      ),
+    ).toEqual([true, false, true]);
   });
 
   it("reuses the message array when no screenshot needs pruning", () => {

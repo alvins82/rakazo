@@ -57,6 +57,27 @@ describe("modelCredentialDto", () => {
     });
   });
 
+  it("projects the configured image limit for an OpenAI-compatible connection", () => {
+    const plaintext = serializeModelSecret({
+      kind: "openai_compatible",
+      baseUrl: "https://example.invalid/v1",
+      maxImagesPerPrompt: 1,
+    });
+
+    expect(
+      modelCredentialDto(
+        {
+          id: "cred-one-image",
+          provider: "openai-compatible",
+          label: "Single-image server",
+          isDefault: true,
+          defaultModel: "custom-vision-model",
+        },
+        plaintext,
+      ),
+    ).toMatchObject({ maxImagesPerPrompt: 1 });
+  });
+
   it("exposes defaultModel as modelId for provider credentials", () => {
     expect(
       modelCredentialDto({
@@ -155,6 +176,16 @@ describe("compatible connection updates", () => {
     expect(parseModelSecret(nextVision)).toMatchObject({
       visionModelIds: ["arbitrary-model", "another-vision-model"],
     });
+  });
+  it("persists the image limit while preserving it on connection updates", () => {
+    const configured = buildModelConnectPlaintext({
+      ...input,
+      maxImagesPerPrompt: 1,
+    });
+    const updated = buildModelConnectPlaintext({ ...input, reasoning: false }, configured);
+
+    expect(parseModelSecret(configured)).toMatchObject({ maxImagesPerPrompt: 1 });
+    expect(parseModelSecret(updated)).toMatchObject({ maxImagesPerPrompt: 1 });
   });
   it.each(["", "fake-replacement-key"])(
     "honors an explicit key replacement or removal",

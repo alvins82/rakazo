@@ -25,6 +25,7 @@ import type {
   AgentToolExecutionResult,
   ConnectorTool,
 } from "@rakazo/adapter-kit";
+import { DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT } from "@rakazo/contracts";
 import { getLogger } from "@rakazo/logging";
 import { isToolPauseResult } from "./approval-effect.js";
 import { builtinAgentTools, DELEGATION_TOOL_NAMES } from "./builtin-tools.js";
@@ -233,7 +234,11 @@ export class PiAgentRuntime implements AgentRuntime {
           streamFn: (m, ctx, options) =>
             models.streamSimple(m, ctx, reliableStreamOptions(m, options)),
           getApiKey: async () => apiKey,
-          transformContext: async (messages) => pruneComputerScreenshotContext(messages),
+          transformContext: async (messages) =>
+            pruneComputerScreenshotContext(
+              messages,
+              request.model.maxImagesPerPrompt ?? DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT,
+            ),
           prepareNextTurnWithContext: async () => {
             if (!request.claimSteering) return undefined;
             const steering = await request.claimSteering([...seenSteeringIds]);
@@ -986,7 +991,11 @@ async function executeSubagent(host: ToolHost, executionId: string, args: Record
     streamFn: (m, ctx, options) =>
       selectedModel.models.streamSimple(m, ctx, reliableStreamOptions(m, options)),
     getApiKey: async () => selectedModel.apiKey,
-    transformContext: async (messages) => pruneComputerScreenshotContext(messages),
+    transformContext: async (messages) =>
+      pruneComputerScreenshotContext(
+        messages,
+        host.request.model.maxImagesPerPrompt ?? DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT,
+      ),
     initialState: {
       systemPrompt: [
         `You are a Rakazo subagent named "${name}".`,
@@ -1189,18 +1198,25 @@ function builtinParameters(tool: ConnectorTool) {
   return undefined;
 }
 
-/** Keep recent visual state without repeatedly resending every earlier full screenshot. */
+/** Keep recent visual state while respecting an optional model image budget. */
 export function pruneComputerScreenshotContext(
   messages: AgentMessage[],
-  screenshotsToKeep = 2,
+  maxImagesPerPrompt = DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT,
 ): AgentMessage[] {
-  let remaining = Math.max(0, screenshotsToKeep);
+  let remaining = Number.isFinite(maxImagesPerPrompt)
+    ? Math.max(0, Math.floor(maxImagesPerPrompt))
+    : DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT;
+  for (const message of messages) {
+    if (!isComputerScreenshotMessage(message)) remaining -= imagePartCount(message);
+  }
+  remaining = Math.max(0, remaining);
   let transformed: AgentMessage[] | undefined;
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index];
     if (!isComputerScreenshotMessage(message)) continue;
-    if (remaining > 0) {
-      remaining -= 1;
+    const images = imagePartCount(message);
+    if (remaining >= images) {
+      remaining -= images;
       continue;
     }
     transformed ??= [...messages];
@@ -1210,6 +1226,14 @@ export function pruneComputerScreenshotContext(
     };
   }
   return transformed ?? messages;
+}
+
+function imagePartCount(message: AgentMessage): number {
+  if (!("content" in message) || !Array.isArray(message.content)) return 0;
+  return message.content.filter(
+    (part: unknown) =>
+      part !== null && typeof part === "object" && "type" in part && part.type === "image",
+  ).length;
 }
 
 function isComputerScreenshotMessage(

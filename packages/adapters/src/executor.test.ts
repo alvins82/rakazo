@@ -1229,6 +1229,7 @@ description: Prepare standup notes
       kind: "openai_compatible",
       baseUrl: "http://127.0.0.1:8000/v1",
       visionModelIds: ["bot-vision-model"],
+      maxImagesPerPrompt: 1,
     });
     const bot = {
       modelProvider: provider,
@@ -1259,6 +1260,7 @@ description: Prepare standup notes
       provider,
       id: "bot-vision-model",
       acceptsImages: true,
+      maxImagesPerPrompt: 1,
     });
 
     bot.modelId = "text-only-model";

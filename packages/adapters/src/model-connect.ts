@@ -26,6 +26,8 @@ export function buildModelConnectPlaintext(
       }).apiKey;
     }
     const previousVisionModelIds = sameEndpoint ? previous.visionModelIds : undefined;
+    const maxImagesPerPrompt =
+      input.maxImagesPerPrompt ?? (sameEndpoint ? previous.maxImagesPerPrompt : undefined);
     const visionModelIds = updateModelImageCapabilities(
       previousVisionModelIds,
       prepared.modelId,
@@ -39,6 +41,7 @@ export function buildModelConnectPlaintext(
       ...(input.supportsImages !== undefined || previousVisionModelIds !== undefined
         ? { visionModelIds }
         : {}),
+      ...(maxImagesPerPrompt !== undefined ? { maxImagesPerPrompt } : {}),
     };
     return serializeModelSecret(secret);
   }
@@ -84,6 +87,9 @@ export function modelCredentialDto(
         : compatibleCredential.supportsImages,
     baseUrl: parsed.baseUrl,
     reasoning: parsed.reasoning ?? false,
+    ...(parsed.maxImagesPerPrompt !== undefined
+      ? { maxImagesPerPrompt: parsed.maxImagesPerPrompt }
+      : {}),
     thinkingLevels: getSupportedThinkingLevels(
       openAiCompatibleModel(row.defaultModel ?? "custom", parsed.baseUrl, parsed.reasoning),
     ) as ThinkingLevel[],
