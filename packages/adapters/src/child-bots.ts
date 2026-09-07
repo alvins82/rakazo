@@ -362,6 +362,8 @@ export async function destroyBot(
   if (dedicated?.providerRef) {
     await deps.sandbox.destroy(toComputerRef(dedicated), context).catch(() => undefined);
   }
+  // Keep the bot deletion transaction from committing if raw transcript cleanup fails.
+  await removePiBotSessions(deps.dataDir, bot.userId, bot.id);
   const deletion = await withTransactionRetry(() =>
     deps.prisma.$transaction(async (tx) => {
       const locked = await tx.$queryRaw<Array<{ id: string; webhookSecretId: string | null }>>`
@@ -452,9 +454,6 @@ export async function destroyBot(
       force: true,
     }).catch(() => undefined);
   }
-  await removePiBotSessions(deps.dataDir, bot.userId, bot.id).catch((error) => {
-    getLogger().warn("Pi bot session cleanup failed", { botId: bot.id, error });
-  });
   const artifactStore = deps.artifacts;
   if (artifactStore) {
     await removeStoredArtifacts(artifactStore, deletion.artifactKeys, context);

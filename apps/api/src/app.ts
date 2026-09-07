@@ -304,9 +304,7 @@ export async function createApp(
           ),
         ),
       );
-      await removePiUserSessions(env.dataDir, userId).catch((error) => {
-        getLogger().warn("Pi user session cleanup failed", { userId, error });
-      });
+      await removePiUserSessions(env.dataDir, userId);
       await rm(pushTokenPath(env.dataDir, userId), { force: true }).catch(() => undefined);
     },
   });

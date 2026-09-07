@@ -32,7 +32,8 @@ export async function removePiBotSessions(
   userId: string | undefined,
   botId: string,
 ): Promise<void> {
-  if (!dataDir || !userId) return;
+  if (!dataDir) return;
+  if (!userId) throw new Error("userId is required to remove Pi bot sessions");
   await rm(piSessionBotRoot(piSessionsRoot(dataDir), userId, botId), {
     recursive: true,
     force: true,
