@@ -796,8 +796,13 @@ export function createRouter(deps: RouterDeps) {
                 where: { id: credential.secretId, userId: context.actor.userId, spaceId: null },
                 select: { ciphertext: true },
               });
-              if (secret)
-                previousPlaintext = deps.secrets.load(secret.ciphertext, credential.secretId);
+              if (secret) {
+                try {
+                  previousPlaintext = deps.secrets.load(secret.ciphertext, credential.secretId);
+                } catch (error) {
+                  if (input.apiKey === undefined) throw error;
+                }
+              }
             }
           }
           plaintext = buildModelConnectPlaintext(input, previousPlaintext);
