@@ -104,6 +104,7 @@ import {
   X,
 } from "lucide-react";
 import {
+  type ClipboardEvent,
   type DragEvent,
   lazy,
   type MutableRefObject,
@@ -153,7 +154,11 @@ import { scheduleFocusPrompt } from "../lib/focus-prompt";
 import { localTimezone } from "../lib/local-timezone";
 import { copyableMessageText } from "../lib/message-text";
 import { messageProviderLabel } from "../lib/messaging";
-import { isFileDrag, revokePendingAttachmentPreviews } from "../lib/pending-attachments";
+import {
+  filesFromClipboard,
+  isFileDrag,
+  revokePendingAttachmentPreviews,
+} from "../lib/pending-attachments";
 import { markAfterPaint, markOnce } from "../lib/performance";
 import { clearSpaceSelection, rpc, selectedSpaceId, selectSpace } from "../lib/rpc";
 import { readSeenRunErrorIds, rememberSeenRunErrorId } from "../lib/run-error-storage";
@@ -1801,7 +1806,7 @@ export function ShellPage() {
     [t],
   );
   const onAttachmentPick = useCallback(
-    async (files: FileList | null) => {
+    async (files: FileList | readonly File[] | null) => {
       const threadKey = activeGroupId.current ?? activeBotId.current;
       if (!threadKey || !files?.length) return;
       const existing = attachmentsForThread(pendingAttachments, threadKey);
@@ -4321,7 +4326,7 @@ const Composer = memo(function Composer({
   onDismissError: () => void;
   sending: boolean;
   fileInputRef: RefObject<HTMLInputElement | null>;
-  onAttachmentPick: (files: FileList | null) => void | Promise<void>;
+  onAttachmentPick: (files: FileList | readonly File[] | null) => void | Promise<void>;
   onRemoveAttachment: (attachment: PendingAttachment) => void;
   onSend: (text: string, mentions?: ComposerMention[]) => Promise<void>;
   onStop: () => Promise<void>;
@@ -4566,6 +4571,27 @@ const Composer = memo(function Composer({
     dragDepth.current = 0;
     setDraggingFiles(false);
     if (!disabled) void onAttachmentPick(dataTransfer.files);
+  }
+
+  function handlePaste(event: ClipboardEvent<HTMLTextAreaElement>) {
+    if (disabled) return;
+    const files = filesFromClipboard(event.clipboardData);
+    if (!files.length) return;
+    event.preventDefault();
+    void onAttachmentPick(files);
+    const text = event.clipboardData?.getData("text/plain") ?? "";
+    if (!text) return;
+    const el = textareaRef.current;
+    const start = el?.selectionStart ?? draft.length;
+    const end = el?.selectionEnd ?? draft.length;
+    const next = `${draft.slice(0, start)}${text}${draft.slice(end)}`;
+    const caret = start + text.length;
+    updateDraft(next);
+    window.requestAnimationFrame(() => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      textarea.setSelectionRange(caret, caret);
+    });
   }
 
   const showComposerPlaceholder =
@@ -4840,6 +4866,7 @@ const Composer = memo(function Composer({
             ref={textareaRef}
             value={draft}
             onChange={(event) => updateDraft(event.target.value)}
+            onPaste={handlePaste}
             onKeyDown={(event) => {
               if (
                 event.key === "Backspace" &&
