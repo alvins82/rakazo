@@ -934,6 +934,17 @@ export const ModelConnectInputSchema = z
     maxImagesPerPrompt: z.number().int().min(1).max(1000).nullable().optional(),
   })
   .superRefine((value, ctx) => {
+    if (
+      value.maxTokens !== undefined &&
+      value.contextWindow !== undefined &&
+      value.maxTokens > value.contextWindow
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Maximum output tokens cannot exceed the context limit",
+        path: ["maxTokens"],
+      });
+    }
     if (value.provider === OPENAI_COMPATIBLE_PROVIDER_ID) {
       if (!value.baseUrl?.trim()) {
         ctx.addIssue({

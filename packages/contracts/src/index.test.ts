@@ -10,6 +10,7 @@ import {
   canReactToThreadMessage,
   McpServerConfigInput,
   MessageBlock,
+  ModelConnectInputSchema,
   ModelOAuthBeginSchema,
   normalizeCreateBotProfile,
   ProductEventType,
@@ -53,6 +54,29 @@ describe("contracts", () => {
     expect(parseModelContextWindow("0")).toBeUndefined();
     expect(parseModelContextWindow("1048577")).toBeUndefined();
     expect(parseModelContextWindow("1.5")).toBeUndefined();
+  });
+
+  it("rejects maxTokens larger than contextWindow on model connect", () => {
+    const invalid = ModelConnectInputSchema.safeParse({
+      provider: "openai-compatible",
+      baseUrl: "http://localhost:8000/v1",
+      modelId: "arbitrary-model",
+      maxTokens: 131072,
+      contextWindow: 1,
+    });
+    expect(invalid.success).toBe(false);
+    if (!invalid.success) {
+      expect(invalid.error.issues.some((issue) => issue.path[0] === "maxTokens")).toBe(true);
+    }
+
+    const valid = ModelConnectInputSchema.safeParse({
+      provider: "openai-compatible",
+      baseUrl: "http://localhost:8000/v1",
+      modelId: "arbitrary-model",
+      maxTokens: 8192,
+      contextWindow: 32768,
+    });
+    expect(valid.success).toBe(true);
   });
 
   it("accepts optional persisted duration only on valid steps blocks", () => {

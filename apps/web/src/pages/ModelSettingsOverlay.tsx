@@ -569,6 +569,8 @@ export function ModelSettingsOverlay({
                         { value: "low", label: t`Low` },
                         { value: "medium", label: t`Medium` },
                         { value: "high", label: t`High` },
+                        { value: "xhigh", label: t`Extra high` },
+                        { value: "max", label: t`Max` },
                       ]}
                       thinkingLevelLabel={t`Reasoning effort`}
                       thinkingLevelDefaultLabel={t`Default`}

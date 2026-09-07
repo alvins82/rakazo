@@ -11,6 +11,7 @@ import {
   parseModelContextWindow,
   parseModelMaxImagesPerPrompt,
   parseModelMaxTokens,
+  type ThinkingLevel,
 } from "@rakazo/contracts";
 import { createModelProbe, initialModelProbeState } from "@rakazo/core";
 import {
@@ -111,6 +112,7 @@ export function OnboardingPage() {
   const [baseUrl, setBaseUrl] = useState("");
   const [reasoning, setReasoning] = useState(false);
   const [manualModelId, setManualModelId] = useState(false);
+  const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel | null>(null);
   const [maxTokens, setMaxTokens] = useState(String(DEFAULT_MODEL_MAX_TOKENS));
   const [contextWindow, setContextWindow] = useState(String(DEFAULT_MODEL_CONTEXT_WINDOW));
   const [supportsImages, setSupportsImages] = useState(false);
@@ -238,8 +240,11 @@ export function OnboardingPage() {
     );
     setBaseUrl("");
     setReasoning(false);
+    setThinkingLevel(null);
     setManualModelId(false);
     setSupportsImages(false);
+    setMaxTokens(String(DEFAULT_MODEL_MAX_TOKENS));
+    setContextWindow(String(DEFAULT_MODEL_CONTEXT_WINDOW));
     setMaxImagesPerPrompt("");
     resetOpenAiCompatibleProbe();
     setError(null);
@@ -307,6 +312,7 @@ export function OnboardingPage() {
           baseUrl: baseUrl.trim(),
           modelId: modelId.trim(),
           reasoning,
+          thinkingLevel: reasoning ? thinkingLevel : null,
           maxTokens: parsedMaxTokens,
           contextWindow: parsedContextWindow,
           supportsImages,
@@ -485,9 +491,26 @@ export function OnboardingPage() {
                   </div>
                   <ModelThinkingOptions
                     reasoning={reasoning}
-                    onReasoningChange={setReasoning}
+                    onReasoningChange={(value) => {
+                      setReasoning(value);
+                      if (!value) setThinkingLevel(null);
+                    }}
                     advancedLabel={t`Advanced`}
                     thinkingLabel={t`Supports thinking`}
+                    thinkingLevel={thinkingLevel}
+                    onThinkingLevelChange={(value) =>
+                      setThinkingLevel(value as ThinkingLevel | null)
+                    }
+                    thinkingLevelOptions={[
+                      { value: "minimal", label: t`Minimal` },
+                      { value: "low", label: t`Low` },
+                      { value: "medium", label: t`Medium` },
+                      { value: "high", label: t`High` },
+                      { value: "xhigh", label: t`Extra high` },
+                      { value: "max", label: t`Max` },
+                    ]}
+                    thinkingLevelLabel={t`Reasoning effort`}
+                    thinkingLevelDefaultLabel={t`Default`}
                     maxTokens={maxTokens}
                     onMaxTokensChange={setMaxTokens}
                     maxTokensLabel={t`Maximum output tokens`}

@@ -1,4 +1,4 @@
-import type { ModelOAuthBegin } from "@rakazo/contracts";
+import type { ModelOAuthBegin, ThinkingLevel } from "@rakazo/contracts";
 import {
   DEFAULT_MODEL_CONTEXT_WINDOW,
   DEFAULT_MODEL_MAX_TOKENS,
@@ -29,12 +29,32 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { type MobileMe, type MobileModel, type MobileModelCredential, rpc } from "../lib/api";
 import { mobileTokens } from "../lib/appearance";
 import { useI18n } from "../lib/i18n";
+import { presentMessageActionSheet } from "../lib/message-action-sheet";
 import {
   cancelModelOAuthAttempt,
   finishModelOAuthAttempt,
   waitForModelOAuth,
 } from "../lib/model-auth";
-import { native, useThemedStyles } from "../lib/native";
+import { native, useResolvedAppearance, useThemedStyles } from "../lib/native";
+
+const THINKING_LEVEL_OPTIONS: ThinkingLevel[] = [
+  "minimal",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+];
+
+function thinkingLevelLabel(level: ThinkingLevel, t: (message: string) => string): string {
+  if (level === "xhigh") return t("Extra high");
+  if (level === "low") return t("Low");
+  if (level === "medium") return t("Medium");
+  if (level === "high") return t("High");
+  if (level === "minimal") return t("Minimal");
+  if (level === "max") return t("Max");
+  return level;
+}
 
 type ModelSelection = {
   provider?: string;
@@ -44,6 +64,7 @@ type ModelSelection = {
 export default function Models() {
   const styles = useThemedStyles(createModelsStyles);
   const { t } = useI18n();
+  const colorScheme = useResolvedAppearance();
   const [catalog, setCatalog] = useState<MobileModel[]>([]);
   const [credentials, setCredentials] = useState<MobileModelCredential[]>([]);
   const [me, setMe] = useState<MobileMe | null>(null);
@@ -53,6 +74,7 @@ export default function Models() {
   const [apiKey, setApiKey] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [reasoning, setReasoning] = useState(false);
+  const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel | null>(null);
   const [maxTokens, setMaxTokens] = useState(String(DEFAULT_MODEL_MAX_TOKENS));
   const [contextWindow, setContextWindow] = useState(String(DEFAULT_MODEL_CONTEXT_WINDOW));
   const [supportsImages, setSupportsImages] = useState(false);
@@ -122,6 +144,7 @@ export default function Models() {
     if (nextProvider === OPENAI_COMPATIBLE_PROVIDER_ID) {
       setBaseUrl(nextCredential?.baseUrl ?? "");
       setReasoning(nextCredential?.reasoning ?? false);
+      setThinkingLevel(nextCredential?.thinkingLevel ?? null);
       setMaxTokens(String(nextCredential?.maxTokens ?? DEFAULT_MODEL_MAX_TOKENS));
       setContextWindow(String(nextCredential?.contextWindow ?? DEFAULT_MODEL_CONTEXT_WINDOW));
       setSupportsImages(nextCredential?.supportsImages ?? false);
@@ -207,6 +230,7 @@ export default function Models() {
     const nextCredential = credentials.find((entry) => entry.provider === nextProvider);
     setProvider(nextProvider);
     setReasoning(nextCredential?.reasoning ?? false);
+    setThinkingLevel(nextCredential?.thinkingLevel ?? null);
     setMaxTokens(String(nextCredential?.maxTokens ?? DEFAULT_MODEL_MAX_TOKENS));
     setContextWindow(String(nextCredential?.contextWindow ?? DEFAULT_MODEL_CONTEXT_WINDOW));
     setSupportsImages(nextCredential?.supportsImages ?? false);
@@ -318,6 +342,7 @@ export default function Models() {
               baseUrl: effectiveBaseUrl,
               modelId: modelId.trim(),
               reasoning,
+              thinkingLevel: reasoning ? thinkingLevel : null,
               maxTokens: parsedMaxTokens,
               contextWindow: parsedContextWindow,
               supportsImages,
@@ -617,10 +642,44 @@ export default function Models() {
                     <Switch
                       accessibilityLabel={t("Supports thinking")}
                       value={reasoning}
-                      onValueChange={setReasoning}
+                      onValueChange={(value) => {
+                        setReasoning(value);
+                        if (!value) setThinkingLevel(null);
+                      }}
                       disabled={busy}
                     />
                   </View>
+                ) : null}
+                {showAdvanced && reasoning ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t("Reasoning effort")}
+                    disabled={busy}
+                    onPress={() => {
+                      presentMessageActionSheet({
+                        title: t("Reasoning effort"),
+                        cancel: t("Cancel"),
+                        more: t("More"),
+                        colorScheme,
+                        actions: [
+                          {
+                            text: t("Default"),
+                            onPress: () => setThinkingLevel(null),
+                          },
+                          ...THINKING_LEVEL_OPTIONS.map((level) => ({
+                            text: thinkingLevelLabel(level, t),
+                            onPress: () => setThinkingLevel(level),
+                          })),
+                        ],
+                      });
+                    }}
+                    style={styles.modelRow}
+                  >
+                    <Text style={styles.modelLabel}>{t("Reasoning effort")}</Text>
+                    <Text style={styles.helpLabel}>
+                      {thinkingLevel ? thinkingLevelLabel(thinkingLevel, t) : t("Default")}
+                    </Text>
+                  </Pressable>
                 ) : null}
                 {showAdvanced ? (
                   <View style={styles.modelRow}>
