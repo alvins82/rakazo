@@ -666,6 +666,7 @@ export function createRunExecutor(deps: ExecutorDeps) {
         baseUrl: resolved.baseUrl,
         reasoning: resolved.reasoning,
         acceptsImages: resolved.acceptsImages,
+        maxImagesPerPrompt: resolved.maxImagesPerPrompt,
         thinkingLevel,
         oauth: resolved.oauth
           ? { credential: resolved.oauth, persist: resolved.persistOAuth }
@@ -3188,6 +3189,7 @@ export function createRunExecutor(deps: ExecutorDeps) {
                 baseUrl: resolved.baseUrl,
                 reasoning: resolved.reasoning,
                 acceptsImages: resolved.acceptsImages,
+                maxImagesPerPrompt: resolved.maxImagesPerPrompt,
                 thinkingLevel,
                 oauth: resolved.oauth
                   ? { credential: resolved.oauth, persist: resolved.persistOAuth }
@@ -4207,6 +4209,7 @@ async function resolveModelKey(
   baseUrl?: string;
   reasoning?: boolean;
   acceptsImages?: boolean;
+  maxImagesPerPrompt?: number;
   oauth?: AgentModelOAuthCredential;
   persistOAuth?: (credential: AgentModelOAuthCredential) => Promise<void>;
   redact: string[];
@@ -4257,6 +4260,10 @@ async function resolveModelKey(
         reasoning:
           resolved.secret.kind === "openai_compatible" ? resolved.secret.reasoning : undefined,
         acceptsImages,
+        maxImagesPerPrompt:
+          resolved.secret.kind === "openai_compatible"
+            ? resolved.secret.maxImagesPerPrompt
+            : undefined,
         oauth,
         persistOAuth: oauth
           ? async (next) => {

@@ -336,6 +336,8 @@ export interface AgentRunRequest {
     reasoning?: boolean;
     /** Whether this custom connection accepts image input. */
     acceptsImages?: boolean;
+    /** Maximum number of image inputs the model connection accepts in one request. */
+    maxImagesPerPrompt?: number;
     /** Preferred thinking effort for reasoning models; clamped to the model’s supported set. */
     thinkingLevel?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | null;
     /** In-process OAuth credential from the encrypted store for this run. */

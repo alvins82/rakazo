@@ -58,6 +58,7 @@ export type StoredModelSecret =
       apiKey?: string;
       reasoning?: boolean;
       visionModelIds?: string[];
+      maxImagesPerPrompt?: number;
     };
 
 export type PiOAuthConnected = {
@@ -132,12 +133,20 @@ export function parseModelSecret(plaintext: string): StoredModelSecret {
                 typeof modelId === "string" && modelId.trim().length > 0,
             )
           : undefined;
+        const maxImagesPerPrompt =
+          typeof parsed.maxImagesPerPrompt === "number" &&
+          Number.isInteger(parsed.maxImagesPerPrompt) &&
+          parsed.maxImagesPerPrompt >= 1 &&
+          parsed.maxImagesPerPrompt <= 1000
+            ? parsed.maxImagesPerPrompt
+            : undefined;
         return {
           kind: "openai_compatible",
           baseUrl: parsed.baseUrl.trim(),
           ...(apiKey ? { apiKey } : {}),
           ...(typeof parsed.reasoning === "boolean" ? { reasoning: parsed.reasoning } : {}),
           ...(visionModelIds ? { visionModelIds } : {}),
+          ...(maxImagesPerPrompt !== undefined ? { maxImagesPerPrompt } : {}),
         };
       }
       if (
@@ -164,6 +173,9 @@ export function serializeModelSecret(secret: StoredModelSecret): string {
       ...(secret.apiKey ? { apiKey: secret.apiKey } : {}),
       ...(secret.reasoning !== undefined ? { reasoning: secret.reasoning } : {}),
       ...(secret.visionModelIds !== undefined ? { visionModelIds: secret.visionModelIds } : {}),
+      ...(secret.maxImagesPerPrompt !== undefined
+        ? { maxImagesPerPrompt: secret.maxImagesPerPrompt }
+        : {}),
     });
   }
   return secret.key;
