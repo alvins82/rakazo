@@ -34,6 +34,7 @@ import {
   BOT_TITLE_MAX_LENGTH,
   BotSecretName,
   BotSecretSubmission,
+  OPENAI_COMPATIBLE_PROVIDER_ID,
   isAttachmentImageMimeType,
 } from "@rakazo/contracts";
 import {
@@ -807,6 +808,7 @@ export function createRunExecutor(deps: ExecutorDeps) {
         scope.spaceId,
         credential,
         provider,
+        id,
       );
       return {
         provider,
@@ -1346,6 +1348,7 @@ export function createRunExecutor(deps: ExecutorDeps) {
           run.spaceId,
           credential,
           runModelProvider,
+          runModelId,
           (values) => runSecrets.push(...values),
         );
         runSecrets.push(...resolved.redact);
@@ -1854,6 +1857,7 @@ export function createRunExecutor(deps: ExecutorDeps) {
                 run.spaceId,
                 reviewCredential,
                 checker.provider,
+                checker.model,
                 (values) => runSecrets.push(...values),
               );
               const judge = await runAutoReviewJudge({
@@ -4496,8 +4500,14 @@ async function resolveModelKey(
   deps: ExecutorDeps,
   userId: string,
   spaceId: string,
-  credential: { secretId: string; provider: string; supportsImages?: boolean } | null,
+  credential: {
+    secretId: string;
+    provider: string;
+    defaultModel?: string | null;
+    supportsImages?: boolean;
+  } | null,
   provider: string,
+  modelId: string,
   registerSecrets?: (values: string[]) => void,
 ): Promise<{
   apiKey?: string;
@@ -4544,7 +4554,10 @@ async function resolveModelKey(
         baseUrl,
         reasoning:
           resolved.secret.kind === "openai_compatible" ? resolved.secret.reasoning : undefined,
-        acceptsImages: credential.supportsImages,
+        acceptsImages:
+          credential.provider === OPENAI_COMPATIBLE_PROVIDER_ID &&
+          credential.supportsImages === true &&
+          credential.defaultModel?.trim() === modelId.trim(),
         oauth,
         persistOAuth: oauth
           ? async (next) => {
