@@ -406,6 +406,7 @@ export function modelsForRequest(
       modelId: request.model.id,
       baseUrl: request.model.baseUrl,
       reasoning: request.model.reasoning,
+      acceptsImages: request.model.acceptsImages,
     });
   }
   return catalogModels();

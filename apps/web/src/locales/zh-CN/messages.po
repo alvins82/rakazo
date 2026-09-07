@@ -3301,6 +3301,11 @@ msgstr "技能"
 msgid "Supports thinking"
 msgstr "支持思考"
 
+#: src/pages/ModelSettingsOverlay.tsx:508
+#: src/pages/Onboarding.tsx:425
+msgid "Supports images"
+msgstr ""
+
 #: src/pages/PluginsOverlay.tsx:486
 msgid "Add GraphQL"
 msgstr "添加 GraphQL"
@@ -3324,4 +3329,3 @@ msgstr "连接 Executor"
 #: src/pages/PluginsOverlay.tsx
 msgid "Executor token"
 msgstr "Executor 令牌"
-

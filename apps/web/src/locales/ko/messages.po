@@ -3301,6 +3301,11 @@ msgstr "스킬"
 msgid "Supports thinking"
 msgstr "사고 모드 지원"
 
+#: src/pages/ModelSettingsOverlay.tsx:508
+#: src/pages/Onboarding.tsx:425
+msgid "Supports images"
+msgstr ""
+
 #: src/pages/PluginsOverlay.tsx:486
 msgid "Add GraphQL"
 msgstr "GraphQL 추가"
@@ -3324,4 +3329,3 @@ msgstr "Executor 연결"
 #: src/pages/PluginsOverlay.tsx
 msgid "Executor token"
 msgstr "Executor 토큰"
-

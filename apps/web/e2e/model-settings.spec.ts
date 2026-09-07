@@ -20,22 +20,26 @@ test("custom connections persist reasoning support and bot thinking", async ({
   await page.getByLabel("OpenAI-compatible server URL").fill("http://127.0.0.1:8090/v1");
   await page.getByLabel("Model id").fill("arbitrary-model");
   await expect(page.getByRole("checkbox", { name: "Supports thinking" })).toBeHidden();
+  await expect(page.getByRole("checkbox", { name: "Supports images" })).toBeHidden();
   await page.getByText("Advanced", { exact: true }).click();
   await page.getByRole("checkbox", { name: "Supports thinking" }).check();
+  await page.getByRole("checkbox", { name: "Supports images" }).check();
   await captureScreenshot(page, testInfo, "openai-compatible-thinking-connection");
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByText("Saved.", { exact: true })).toBeVisible();
-  const credentials = await rpc<Array<{ modelId?: string; reasoning?: boolean }>>(
-    page,
-    "models/credentials",
-    {},
-  );
+  const credentials = await rpc<
+    Array<{ modelId?: string; reasoning?: boolean; supportsImages?: boolean }>
+  >(page, "models/credentials", {});
   expect(credentials.find((entry) => entry.modelId === "arbitrary-model")?.reasoning).toBe(true);
+  expect(credentials.find((entry) => entry.modelId === "arbitrary-model")?.supportsImages).toBe(
+    true,
+  );
   await page.reload();
   await page.getByRole("button", { name: new RegExp(userName) }).click();
   await page.getByRole("button", { name: "Models", exact: true }).click();
   await page.getByText("Advanced", { exact: true }).click();
   await expect(page.getByRole("checkbox", { name: "Supports thinking" })).toBeChecked();
+  await expect(page.getByRole("checkbox", { name: "Supports images" })).toBeChecked();
   await page.getByRole("button", { name: "Close model settings" }).click();
   await page.locator("main").getByRole("button", { name: "Chief", exact: true }).click();
   const settings = page.getByTestId("bot-settings");

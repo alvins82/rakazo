@@ -649,6 +649,7 @@ export function createRouter(deps: RouterDeps) {
           plaintext,
           label: input.label,
           modelId: input.modelId,
+          supportsImages: input.supportsImages,
           signal: context.signal,
         });
       }),
@@ -4692,6 +4693,7 @@ async function persistModelCredential(
     plaintext: string;
     label?: string;
     modelId?: string;
+    supportsImages?: boolean;
     signal?: AbortSignal;
   },
 ) {
@@ -4730,6 +4732,7 @@ async function persistModelCredential(
                 provider: input.provider,
                 label: input.label ?? input.provider,
                 secretId: secret.id,
+                supportsImages: input.supportsImages ?? false,
               },
             })
           : await tx.userModelCredential.update({
@@ -4737,6 +4740,9 @@ async function persistModelCredential(
               data: {
                 label: input.label ?? input.provider,
                 secretId: secret.id,
+                ...(input.supportsImages !== undefined
+                  ? { supportsImages: input.supportsImages }
+                  : {}),
               },
             });
         throwIfAborted(input.signal);

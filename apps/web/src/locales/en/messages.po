@@ -3301,6 +3301,11 @@ msgstr "Skills"
 msgid "Supports thinking"
 msgstr "Supports thinking"
 
+#: src/pages/ModelSettingsOverlay.tsx:508
+#: src/pages/Onboarding.tsx:425
+msgid "Supports images"
+msgstr "Supports images"
+
 #: src/pages/PluginsOverlay.tsx:486
 msgid "Add GraphQL"
 msgstr "Add GraphQL"
@@ -3324,4 +3329,3 @@ msgstr "Connect Executor"
 #: src/pages/PluginsOverlay.tsx
 msgid "Executor token"
 msgstr "Executor token"
-

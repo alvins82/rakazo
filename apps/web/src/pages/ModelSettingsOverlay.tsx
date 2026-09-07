@@ -45,6 +45,7 @@ export function ModelSettingsOverlay({ onClose }: { onClose: () => void }) {
   const [apiKey, setApiKey] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [reasoning, setReasoning] = useState(false);
+  const [supportsImages, setSupportsImages] = useState(false);
   const [{ models: probeModels, baseUrl: probedBaseUrl, probing }, setProbe] =
     useState(initialModelProbeState);
   const [modelProbe] = useState(() => createModelProbe(setProbe));
@@ -112,6 +113,7 @@ export function ModelSettingsOverlay({ onClose }: { onClose: () => void }) {
       if (nextProvider === OPENAI_COMPATIBLE_PROVIDER_ID) {
         setBaseUrl(nextCredential?.baseUrl ?? "");
         setReasoning(nextCredential?.reasoning ?? false);
+        setSupportsImages(nextCredential?.supportsImages ?? false);
       }
     }
   }
@@ -191,6 +193,7 @@ export function ModelSettingsOverlay({ onClose }: { onClose: () => void }) {
     const nextCredential = credentials.find((entry) => entry.provider === nextProvider);
     setProvider(nextProvider);
     setReasoning(nextCredential?.reasoning ?? false);
+    setSupportsImages(nextCredential?.supportsImages ?? false);
     setModelId(
       nextProvider === OPENAI_COMPATIBLE_PROVIDER_ID
         ? (nextCredential?.modelId ?? "")
@@ -259,6 +262,7 @@ export function ModelSettingsOverlay({ onClose }: { onClose: () => void }) {
               baseUrl: effectiveBaseUrl,
               modelId: modelId.trim(),
               reasoning,
+              supportsImages,
               apiKey: apiKey.trim() || undefined,
               label: selected.providerName ?? selected.provider,
             }
@@ -495,6 +499,13 @@ export function ModelSettingsOverlay({ onClose }: { onClose: () => void }) {
                         disabled={busy}
                         advancedLabel={t`Advanced`}
                         thinkingLabel={t`Supports thinking`}
+                        supportsImages={supportsImages}
+                        onSupportsImagesChange={(value) => {
+                          selectionRevisionRef.current += 1;
+                          setSupportsImages(value);
+                          setNotice(null);
+                        }}
+                        imagesLabel={t`Supports images`}
                       />
                     </>
                   ) : (

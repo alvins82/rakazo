@@ -25,6 +25,7 @@ describe("modelCredentialDto", () => {
       label: "Local MLX",
       hasKey: true,
       isDefault: true,
+      supportsImages: false,
       baseUrl: "https://example.invalid/v1",
       modelId: "qwen3-4b",
       reasoning: false,

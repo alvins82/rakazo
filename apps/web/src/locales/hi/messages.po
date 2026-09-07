@@ -3301,6 +3301,11 @@ msgstr "स्किल्स"
 msgid "Supports thinking"
 msgstr "सोचने की क्षमता का समर्थन करता है"
 
+#: src/pages/ModelSettingsOverlay.tsx:508
+#: src/pages/Onboarding.tsx:425
+msgid "Supports images"
+msgstr ""
+
 #: src/pages/PluginsOverlay.tsx:486
 msgid "Add GraphQL"
 msgstr "GraphQL जोड़ें"
@@ -3324,4 +3329,3 @@ msgstr "Executor कनेक्ट करें"
 #: src/pages/PluginsOverlay.tsx
 msgid "Executor token"
 msgstr "Executor टोकन"
-

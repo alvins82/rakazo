@@ -48,6 +48,7 @@ export function modelCredentialDto(
     label: string;
     isDefault: boolean;
     defaultModel?: string | null;
+    supportsImages?: boolean;
   },
   plaintext?: string,
 ): ModelCredential {
@@ -59,11 +60,16 @@ export function modelCredentialDto(
     isDefault: row.isDefault,
     ...(row.defaultModel ? { modelId: row.defaultModel } : {}),
   };
-  if (row.provider !== CONTRACT_OPENAI_COMPAT || !plaintext) return credential;
-  const parsed = parseModelSecret(plaintext);
-  if (parsed.kind !== "openai_compatible") return credential;
-  return {
+  if (row.provider !== CONTRACT_OPENAI_COMPAT) return credential;
+  const compatibleCredential = {
     ...credential,
+    supportsImages: row.supportsImages ?? false,
+  };
+  if (!plaintext) return compatibleCredential;
+  const parsed = parseModelSecret(plaintext);
+  if (parsed.kind !== "openai_compatible") return compatibleCredential;
+  return {
+    ...compatibleCredential,
     baseUrl: parsed.baseUrl,
     reasoning: parsed.reasoning ?? false,
     thinkingLevels: getSupportedThinkingLevels(

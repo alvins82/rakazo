@@ -3301,6 +3301,11 @@ msgstr "Beceriler"
 msgid "Supports thinking"
 msgstr "Düşünmeyi destekler"
 
+#: src/pages/ModelSettingsOverlay.tsx:508
+#: src/pages/Onboarding.tsx:425
+msgid "Supports images"
+msgstr ""
+
 #: src/pages/PluginsOverlay.tsx:486
 msgid "Add GraphQL"
 msgstr "GraphQL ekle"
@@ -3324,4 +3329,3 @@ msgstr "Executor'a bağlan"
 #: src/pages/PluginsOverlay.tsx
 msgid "Executor token"
 msgstr "Executor belirteci"
-
