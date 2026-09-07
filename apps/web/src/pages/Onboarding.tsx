@@ -104,6 +104,7 @@ export function OnboardingPage() {
   const [baseUrl, setBaseUrl] = useState("");
   const [reasoning, setReasoning] = useState(false);
   const [manualModelId, setManualModelId] = useState(false);
+  const [supportsImages, setSupportsImages] = useState(false);
   const [{ models: probeModels, baseUrl: probedBaseUrl, probing }, setProbe] =
     useState(initialModelProbeState);
   const [modelProbe] = useState(() => createModelProbe(setProbe));
@@ -228,6 +229,7 @@ export function OnboardingPage() {
     setBaseUrl("");
     setReasoning(false);
     setManualModelId(false);
+    setSupportsImages(false);
     resetOpenAiCompatibleProbe();
     setError(null);
     setNotice(null);
@@ -269,6 +271,7 @@ export function OnboardingPage() {
           baseUrl: baseUrl.trim(),
           modelId: modelId.trim(),
           reasoning,
+          supportsImages,
           apiKey: apiKey.trim() || undefined,
           label: selected?.providerName ?? provider,
         });
@@ -446,6 +449,9 @@ export function OnboardingPage() {
                     onReasoningChange={setReasoning}
                     advancedLabel={t`Advanced`}
                     thinkingLabel={t`Supports thinking`}
+                    supportsImages={supportsImages}
+                    onSupportsImagesChange={setSupportsImages}
+                    imagesLabel={t`Supports images`}
                   />
                 </>
               ) : (

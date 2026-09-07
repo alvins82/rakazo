@@ -814,6 +814,7 @@ export function createRunExecutor(deps: ExecutorDeps) {
         apiKey: resolved.oauth ? undefined : resolved.apiKey,
         baseUrl: resolved.baseUrl,
         reasoning: resolved.reasoning,
+        acceptsImages: resolved.acceptsImages,
         thinkingLevel,
         oauth: resolved.oauth
           ? { credential: resolved.oauth, persist: resolved.persistOAuth }
@@ -1387,7 +1388,7 @@ export function createRunExecutor(deps: ExecutorDeps) {
         // vision-capable default was gated as "scripted" and lost its screenshot tools.
         const acceptsImages =
           deps.runtime.describe().capabilities.scripted ||
-          modelAcceptsImageInput(runModelProvider, runModelId);
+          modelAcceptsImageInput(runModelProvider, runModelId, resolved.acceptsImages);
         const groupContext = thread.groupId
           ? await loadGroupContext(deps.prisma, thread.groupId, { id: bot.id, name: bot.name })
           : undefined;
@@ -3427,6 +3428,7 @@ export function createRunExecutor(deps: ExecutorDeps) {
                 apiKey: resolved.oauth ? undefined : resolved.apiKey,
                 baseUrl: resolved.baseUrl,
                 reasoning: resolved.reasoning,
+                acceptsImages: resolved.acceptsImages,
                 thinkingLevel,
                 oauth: resolved.oauth
                   ? { credential: resolved.oauth, persist: resolved.persistOAuth }
@@ -4494,13 +4496,14 @@ async function resolveModelKey(
   deps: ExecutorDeps,
   userId: string,
   spaceId: string,
-  credential: { secretId: string; provider: string } | null,
+  credential: { secretId: string; provider: string; supportsImages?: boolean } | null,
   provider: string,
   registerSecrets?: (values: string[]) => void,
 ): Promise<{
   apiKey?: string;
   baseUrl?: string;
   reasoning?: boolean;
+  acceptsImages?: boolean;
   oauth?: AgentModelOAuthCredential;
   persistOAuth?: (credential: AgentModelOAuthCredential) => Promise<void>;
   redact: string[];
@@ -4541,6 +4544,7 @@ async function resolveModelKey(
         baseUrl,
         reasoning:
           resolved.secret.kind === "openai_compatible" ? resolved.secret.reasoning : undefined,
+        acceptsImages: credential.supportsImages,
         oauth,
         persistOAuth: oauth
           ? async (next) => {

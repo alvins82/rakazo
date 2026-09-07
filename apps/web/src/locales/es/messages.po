@@ -3355,6 +3355,11 @@ msgstr "Enviar"
 msgid "Supports thinking"
 msgstr "Admite razonamiento"
 
+#: src/pages/ModelSettingsOverlay.tsx:508
+#: src/pages/Onboarding.tsx:425
+msgid "Supports images"
+msgstr ""
+
 #: src/pages/shell/command-palette.tsx:90
 msgid "Switch bot"
 msgstr ""

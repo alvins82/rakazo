@@ -47,11 +47,17 @@ export function resolveModelRefForVisionCheck(
  * Whether the selected model accepts image input, per the Pi model catalog's
  * declared `input` modalities. Unknown models are treated as text-only.
  * The `scripted` placeholder is resolved the same way Pi does (env default /
- * GPT-5.6 Luna fallback) before the catalog check.
+ * GPT-5.6 Luna fallback) before the catalog check. An explicit connection capability
+ * override is honored for OpenAI-compatible models.
  */
-export function modelAcceptsImageInput(provider: string, modelId: string): boolean {
+export function modelAcceptsImageInput(
+  provider: string,
+  modelId: string,
+  acceptsImages = false,
+): boolean {
   const resolved = resolveModelRefForVisionCheck(provider, modelId);
   if (!resolved.provider || !resolved.id) return false;
+  if (acceptsImages && resolved.provider === OPENAI_COMPATIBLE_PROVIDER_ID) return true;
 
   const models = catalogModels();
   let model = models.getModel(resolved.provider, resolved.id);

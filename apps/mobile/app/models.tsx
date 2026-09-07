@@ -46,6 +46,7 @@ export default function Models() {
   const [apiKey, setApiKey] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [reasoning, setReasoning] = useState(false);
+  const [supportsImages, setSupportsImages] = useState(false);
   const [showEndpointHelp, setShowEndpointHelp] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
@@ -111,6 +112,7 @@ export default function Models() {
     if (nextProvider === OPENAI_COMPATIBLE_PROVIDER_ID) {
       setBaseUrl(nextCredential?.baseUrl ?? "");
       setReasoning(nextCredential?.reasoning ?? false);
+      setSupportsImages(nextCredential?.supportsImages ?? false);
     }
   }, []);
 
@@ -192,6 +194,7 @@ export default function Models() {
     const nextCredential = credentials.find((entry) => entry.provider === nextProvider);
     setProvider(nextProvider);
     setReasoning(nextCredential?.reasoning ?? false);
+    setSupportsImages(nextCredential?.supportsImages ?? false);
     setModelId(
       nextProvider === OPENAI_COMPATIBLE_PROVIDER_ID
         ? (nextCredential?.modelId ?? "")
@@ -270,6 +273,7 @@ export default function Models() {
               baseUrl: effectiveBaseUrl,
               modelId: modelId.trim(),
               reasoning,
+              supportsImages,
               apiKey: apiKey.trim() || undefined,
               label: selected.providerName ?? selected.provider,
             }
@@ -566,6 +570,17 @@ export default function Models() {
                       accessibilityLabel={t("Supports thinking")}
                       value={reasoning}
                       onValueChange={setReasoning}
+                      disabled={busy}
+                    />
+                  </View>
+                ) : null}
+                {showAdvanced ? (
+                  <View style={styles.modelRow}>
+                    <Text style={styles.modelLabel}>{t("Supports images")}</Text>
+                    <Switch
+                      accessibilityLabel={t("Supports images")}
+                      value={supportsImages}
+                      onValueChange={setSupportsImages}
                       disabled={busy}
                     />
                   </View>

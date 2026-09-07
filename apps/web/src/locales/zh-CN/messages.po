@@ -3355,6 +3355,11 @@ msgstr "提交"
 msgid "Supports thinking"
 msgstr "支持思考"
 
+#: src/pages/ModelSettingsOverlay.tsx:508
+#: src/pages/Onboarding.tsx:425
+msgid "Supports images"
+msgstr ""
+
 #: src/pages/shell/command-palette.tsx:90
 msgid "Switch bot"
 msgstr ""
