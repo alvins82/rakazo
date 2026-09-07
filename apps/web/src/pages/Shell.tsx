@@ -2463,6 +2463,7 @@ export function ShellPage() {
                     bots={bots}
                     onCreateBot={() => {
                       setCreateMenuOpen(false);
+                      setMobileSidebarOpen(false);
                       setPanel("create");
                     }}
                     onOpenBot={(id) => {
@@ -2472,10 +2473,12 @@ export function ShellPage() {
                     }}
                     onCreateGroup={() => {
                       setCreateMenuOpen(false);
+                      setMobileSidebarOpen(false);
                       setPanel("create-group");
                     }}
                     onCreateSpace={() => {
                       setCreateMenuOpen(false);
+                      setMobileSidebarOpen(false);
                       setNewSpaceOpen(true);
                     }}
                   />
