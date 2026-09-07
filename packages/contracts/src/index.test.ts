@@ -13,6 +13,7 @@ import {
   ModelOAuthBeginSchema,
   normalizeCreateBotProfile,
   ProductEventType,
+  parseModelMaxImagesPerPrompt,
   ReorderBotsInput,
   RunActivityRowSchema,
   RunSchema,
@@ -25,6 +26,15 @@ describe("contracts", () => {
     expect(MessageBlock.parse({ kind: "progress", text: "Using browser", activity: true })).toEqual(
       { kind: "progress", text: "Using browser", activity: true },
     );
+  });
+
+  it("parses bounded model image limits", () => {
+    expect(parseModelMaxImagesPerPrompt("1")).toBe(1);
+    expect(parseModelMaxImagesPerPrompt("1000")).toBe(1000);
+    expect(parseModelMaxImagesPerPrompt("0")).toBeUndefined();
+    expect(parseModelMaxImagesPerPrompt("1001")).toBeUndefined();
+    expect(parseModelMaxImagesPerPrompt("1.5")).toBeUndefined();
+    expect(parseModelMaxImagesPerPrompt("1", false)).toBeUndefined();
   });
 
   it("accepts optional persisted duration only on valid steps blocks", () => {

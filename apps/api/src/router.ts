@@ -785,7 +785,7 @@ export function createRouter(deps: RouterDeps) {
         let plaintext: string;
         try {
           let previousPlaintext: string | undefined;
-          if (input.provider === OPENAI_COMPATIBLE_PROVIDER_ID && input.apiKey === undefined) {
+          if (input.provider === OPENAI_COMPATIBLE_PROVIDER_ID) {
             const credential = await findModelCredential(
               deps.prisma,
               context.actor,

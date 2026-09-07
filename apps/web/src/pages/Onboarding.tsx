@@ -5,6 +5,7 @@ import {
   OPENAI_COMPATIBLE_PROVIDER_ID,
   openAiCompatibleConnectReady,
   openAiCompatibleProbeSuccessMessage,
+  parseModelMaxImagesPerPrompt,
 } from "@rakazo/contracts";
 import { createModelProbe, initialModelProbeState } from "@rakazo/core";
 import {
@@ -234,6 +235,7 @@ export function OnboardingPage() {
     setReasoning(false);
     setManualModelId(false);
     setSupportsImages(false);
+    setMaxImagesPerPrompt(String(DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT));
     resetOpenAiCompatibleProbe();
     setError(null);
     setNotice(null);
@@ -270,13 +272,11 @@ export function OnboardingPage() {
     setError(null);
     try {
       if (isOpenAiCompatible) {
-        const parsedMaxImagesPerPrompt = Number(maxImagesPerPrompt);
-        if (
-          supportsImages &&
-          (!Number.isInteger(parsedMaxImagesPerPrompt) ||
-            parsedMaxImagesPerPrompt < 1 ||
-            parsedMaxImagesPerPrompt > 1000)
-        ) {
+        const parsedMaxImagesPerPrompt = parseModelMaxImagesPerPrompt(
+          maxImagesPerPrompt,
+          supportsImages,
+        );
+        if (supportsImages && parsedMaxImagesPerPrompt === undefined) {
           setError(t`Enter a whole number from 1 to 1000 for the image limit.`);
           return;
         }
@@ -286,7 +286,7 @@ export function OnboardingPage() {
           modelId: modelId.trim(),
           reasoning,
           supportsImages,
-          maxImagesPerPrompt: supportsImages ? parsedMaxImagesPerPrompt : undefined,
+          maxImagesPerPrompt: parsedMaxImagesPerPrompt,
           apiKey: apiKey.trim() || undefined,
           label: selected?.providerName ?? provider,
         });

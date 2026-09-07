@@ -865,6 +865,16 @@ export type ThreadSnapshot = z.infer<typeof ThreadSnapshotSchema>;
 /** Default visual context retained when a model connection has no image-limit override. */
 export const DEFAULT_MODEL_MAX_IMAGES_PER_PROMPT = 2;
 
+/** Parse the optional per-connection image limit entered in model settings. */
+export function parseModelMaxImagesPerPrompt(
+  value: string,
+  supportsImages = true,
+): number | undefined {
+  if (!supportsImages) return undefined;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 1 && parsed <= 1000 ? parsed : undefined;
+}
+
 export const ModelCredentialSchema = z.object({
   id: Id,
   provider: z.string(),
