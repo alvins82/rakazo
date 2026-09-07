@@ -195,6 +195,38 @@ describe("compatible connection updates", () => {
       else expect(saved).not.toHaveProperty("apiKey");
     },
   );
+  it("omits visionModelIds when prior plaintext is unavailable during key replacement", () => {
+    const saved = parseModelSecret(
+      buildModelConnectPlaintext(
+        { ...input, apiKey: "fake-replacement-key", supportsImages: true },
+        undefined,
+        { omitVisionModelIds: true },
+      ),
+    );
+    expect(saved).toMatchObject({
+      kind: "openai_compatible",
+      apiKey: "fake-replacement-key",
+    });
+    expect(saved).not.toHaveProperty("visionModelIds");
+  });
+  it("preserves multi-model visionModelIds when prior plaintext loads during key replacement", () => {
+    const prior = serializeModelSecret({
+      kind: "openai_compatible",
+      baseUrl: input.baseUrl,
+      apiKey: "fake-saved-key",
+      visionModelIds: ["bot-vision-model", "another-vision-model"],
+    });
+    const saved = parseModelSecret(
+      buildModelConnectPlaintext(
+        { ...input, apiKey: "fake-replacement-key", supportsImages: true },
+        prior,
+      ),
+    );
+    expect(saved).toMatchObject({
+      apiKey: "fake-replacement-key",
+      visionModelIds: ["bot-vision-model", "another-vision-model", "arbitrary-model"],
+    });
+  });
   it("revalidates inherited keys against the public-HTTPS policy", () => {
     vi.stubEnv("RAKAZO_OPENAI_COMPAT_ALLOW_PUBLIC", "1");
     const baseUrl = "http://example.invalid/v1";

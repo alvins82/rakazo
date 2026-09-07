@@ -9,9 +9,15 @@ import {
   prepareOpenAiCompatibleConnect,
 } from "./pi-openai-compatible-provider.js";
 
+export type BuildModelConnectOptions = {
+  /** Skip writing visionModelIds when prior plaintext was unavailable during key replacement. */
+  omitVisionModelIds?: boolean;
+};
+
 export function buildModelConnectPlaintext(
   input: ModelConnectInput,
   previousPlaintext?: string,
+  options?: BuildModelConnectOptions,
 ): string {
   if (input.provider === OPENAI_COMPATIBLE_PROVIDER_ID) {
     const prepared = prepareOpenAiCompatibleConnect(input);
@@ -33,14 +39,15 @@ export function buildModelConnectPlaintext(
       prepared.modelId,
       input.supportsImages,
     );
+    const includeVisionModelIds =
+      !options?.omitVisionModelIds &&
+      (input.supportsImages !== undefined || previousVisionModelIds !== undefined);
     const secret: StoredModelSecret = {
       kind: "openai_compatible",
       baseUrl: prepared.baseUrl,
       ...(input.reasoning !== undefined ? { reasoning: input.reasoning } : {}),
       ...(prepared.apiKey ? { apiKey: prepared.apiKey } : {}),
-      ...(input.supportsImages !== undefined || previousVisionModelIds !== undefined
-        ? { visionModelIds }
-        : {}),
+      ...(includeVisionModelIds ? { visionModelIds } : {}),
       ...(maxImagesPerPrompt !== undefined ? { maxImagesPerPrompt } : {}),
     };
     return serializeModelSecret(secret);

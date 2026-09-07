@@ -785,6 +785,7 @@ export function createRouter(deps: RouterDeps) {
         let plaintext: string;
         try {
           let previousPlaintext: string | undefined;
+          let omitVisionModelIds = false;
           if (input.provider === OPENAI_COMPATIBLE_PROVIDER_ID) {
             const credential = await findModelCredential(
               deps.prisma,
@@ -800,12 +801,19 @@ export function createRouter(deps: RouterDeps) {
                 try {
                   previousPlaintext = deps.secrets.load(secret.ciphertext, credential.secretId);
                 } catch (error) {
+                  // Explicit key replacement must still succeed when the prior
+                  // ciphertext is unreadable. Omit visionModelIds so a partial
+                  // one-model list does not wipe other enabled models; DB
+                  // supportsImages + defaultModel remain the legacy fallback.
                   if (input.apiKey === undefined) throw error;
+                  omitVisionModelIds = true;
                 }
               }
             }
           }
-          plaintext = buildModelConnectPlaintext(input, previousPlaintext);
+          plaintext = buildModelConnectPlaintext(input, previousPlaintext, {
+            omitVisionModelIds,
+          });
         } catch (error) {
           throw new ORPCError("BAD_REQUEST", {
             message: error instanceof Error ? error.message : "Invalid model connection",
