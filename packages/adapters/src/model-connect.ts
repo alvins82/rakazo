@@ -33,7 +33,9 @@ export function buildModelConnectPlaintext(
     }
     const previousVisionModelIds = sameEndpoint ? previous.visionModelIds : undefined;
     const maxImagesPerPrompt =
-      input.maxImagesPerPrompt ?? (sameEndpoint ? previous.maxImagesPerPrompt : undefined);
+      input.maxImagesPerPrompt === null
+        ? undefined
+        : (input.maxImagesPerPrompt ?? (sameEndpoint ? previous.maxImagesPerPrompt : undefined));
     const visionModelIds = updateModelImageCapabilities(
       previousVisionModelIds,
       prepared.modelId,

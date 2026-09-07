@@ -48,6 +48,17 @@ test("custom connections persist reasoning support and bot thinking", async ({
   await expect(page.getByRole("checkbox", { name: "Supports thinking" })).toBeChecked();
   await expect(page.getByRole("checkbox", { name: "Supports images" })).toBeChecked();
   await expect(page.getByLabel("Maximum images per request")).toHaveValue("1");
+  await page.getByLabel("Maximum images per request").fill("");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByText("Saved.", { exact: true })).toBeVisible();
+  const clearedCredentials = await rpc<Array<{ modelId?: string; maxImagesPerPrompt?: number }>>(
+    page,
+    "models/credentials",
+    {},
+  );
+  expect(
+    clearedCredentials.find((entry) => entry.modelId === "arbitrary-model")?.maxImagesPerPrompt,
+  ).toBeUndefined();
   await page.getByRole("button", { name: "Close model settings" }).click();
   await page.locator("main").getByRole("button", { name: "Chief", exact: true }).click();
   const settings = page.getByTestId("bot-settings");

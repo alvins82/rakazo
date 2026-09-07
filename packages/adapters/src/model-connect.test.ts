@@ -187,6 +187,21 @@ describe("compatible connection updates", () => {
     expect(parseModelSecret(configured)).toMatchObject({ maxImagesPerPrompt: 1 });
     expect(parseModelSecret(updated)).toMatchObject({ maxImagesPerPrompt: 1 });
   });
+  it("clears a saved image limit when explicitly requested", () => {
+    const configured = buildModelConnectPlaintext({
+      ...input,
+      maxImagesPerPrompt: 1,
+    });
+    const cleared = buildModelConnectPlaintext(
+      {
+        ...input,
+        maxImagesPerPrompt: null,
+      },
+      configured,
+    );
+
+    expect(parseModelSecret(cleared)).not.toHaveProperty("maxImagesPerPrompt");
+  });
   it.each(["", "fake-replacement-key"])(
     "honors an explicit key replacement or removal",
     (apiKey) => {

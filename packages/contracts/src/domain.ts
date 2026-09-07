@@ -898,7 +898,7 @@ export const ModelConnectInputSchema = z
     modelId: z.string().optional(),
     reasoning: z.boolean().optional(),
     supportsImages: z.boolean().optional(),
-    maxImagesPerPrompt: z.number().int().min(1).max(1000).optional(),
+    maxImagesPerPrompt: z.number().int().min(1).max(1000).nullable().optional(),
   })
   .superRefine((value, ctx) => {
     if (value.provider === OPENAI_COMPATIBLE_PROVIDER_ID) {

@@ -277,13 +277,15 @@ export function OnboardingPage() {
           setError(t`Enter a whole number from 1 to 1000 for the image limit.`);
           return;
         }
+        const maxImagesPerPromptInput =
+          supportsImages && !maxImagesPerPrompt.trim() ? null : parsedMaxImagesPerPrompt;
         await rpc.models.connect({
           provider,
           baseUrl: baseUrl.trim(),
           modelId: modelId.trim(),
           reasoning,
           supportsImages,
-          maxImagesPerPrompt: parsedMaxImagesPerPrompt,
+          maxImagesPerPrompt: maxImagesPerPromptInput,
           apiKey: apiKey.trim() || undefined,
           label: selected?.providerName ?? provider,
         });
