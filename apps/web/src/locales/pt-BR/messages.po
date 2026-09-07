@@ -3760,3 +3760,36 @@ msgstr ""
 #: apps/web/src/pages/memory-providers/SerenitySettingsForm.tsx
 msgid "Recall and write"
 msgstr ""
+
+#: src/pages/Onboarding.tsx:516
+msgid "Reasoning effort"
+msgstr "Esforço de raciocínio"
+
+#: src/pages/Onboarding.tsx:517
+msgid "Default"
+msgstr "Padrão"
+
+#: src/pages/Onboarding.tsx:520
+msgid "Maximum output tokens"
+msgstr "Máximo de tokens de saída"
+
+#: src/pages/Onboarding.tsx:523
+msgid "Context limit"
+msgstr "Limite de contexto"
+
+#: src/pages/Onboarding.tsx:227
+msgid "Enter a whole number from 1 to {MAX_MODEL_MAX_TOKENS} for maximum output tokens."
+msgstr "Digite um número inteiro de 1 a {MAX_MODEL_MAX_TOKENS} para o máximo de tokens de saída."
+
+#: src/pages/Onboarding.tsx:234
+msgid "Enter a whole number from 1 to {MAX_MODEL_CONTEXT_WINDOW} for the context limit."
+msgstr "Digite um número inteiro de 1 a {MAX_MODEL_CONTEXT_WINDOW} para o limite de contexto."
+
+#: src/pages/Onboarding.tsx:218
+msgid "Enter a whole number from 1 to 1000 for the image limit."
+msgstr "Digite um número inteiro de 1 a 1000 para o limite de imagens."
+
+#: src/pages/Onboarding.tsx:529
+msgid "Maximum images per request"
+msgstr "Máximo de imagens por solicitação"
+
