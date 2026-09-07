@@ -4,14 +4,17 @@ import path from "node:path";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { describe, expect, it } from "vitest";
 import {
+  isPiSessionRecordingEnabled,
   PI_SESSION_MAX_FILES_PER_BOT,
   PI_SESSION_RETENTION_DAYS,
   PiJsonlSessionRecorder,
   piSessionBotRoot,
+  piSessionsRoot,
   piSessionUserRoot,
   prunePiSessionFiles,
   removePiBotSessions,
   removePiUserSessions,
+  resolvePiSessionRoot,
 } from "./pi-session.js";
 
 async function readFiles(root: string): Promise<string> {
@@ -26,6 +29,18 @@ async function readFiles(root: string): Promise<string> {
 }
 
 describe("Pi JSONL sessions", () => {
+  it("keeps session recording opt-in and off by default", () => {
+    expect(isPiSessionRecordingEnabled({})).toBe(false);
+    expect(isPiSessionRecordingEnabled({ PI_SESSION_RECORDING: "false" })).toBe(false);
+    expect(isPiSessionRecordingEnabled({ PI_SESSION_RECORDING: "1" })).toBe(false);
+    expect(isPiSessionRecordingEnabled({ PI_SESSION_RECORDING: "true" })).toBe(true);
+    expect(resolvePiSessionRoot("/data", {})).toBeUndefined();
+    expect(resolvePiSessionRoot("/data", { PI_SESSION_RECORDING: "false" })).toBeUndefined();
+    expect(resolvePiSessionRoot("/data", { PI_SESSION_RECORDING: "true" })).toBe(
+      piSessionsRoot("/data"),
+    );
+  });
+
   it("uses Pi's session format for context and completed messages", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "rakazo-pi-session-"));
     try {

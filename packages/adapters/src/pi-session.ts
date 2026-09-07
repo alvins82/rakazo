@@ -27,6 +27,19 @@ export function piSessionsRoot(dataDir: string): string {
   return path.resolve(dataDir, "pi-sessions");
 }
 
+/** Opt-in only. Hosted multi-tenant DATA_DIR transcripts are unencrypted. */
+export function isPiSessionRecordingEnabled(source: NodeJS.ProcessEnv = process.env): boolean {
+  return source.PI_SESSION_RECORDING === "true";
+}
+
+/** Returns the Pi JSONL session root when recording is enabled; otherwise undefined. */
+export function resolvePiSessionRoot(
+  dataDir: string,
+  source: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  return isPiSessionRecordingEnabled(source) ? piSessionsRoot(dataDir) : undefined;
+}
+
 export async function removePiBotSessions(
   dataDir: string | undefined,
   userId: string | undefined,

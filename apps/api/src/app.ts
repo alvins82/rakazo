@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { rm } from "node:fs/promises";
-import path from "node:path";
 import { ORPCError, onError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import type {
@@ -49,6 +48,7 @@ import {
   PipedreamConnector,
   PostgresRealtimeFanout,
   pipedreamConfigFromEnv,
+  piSessionsRoot,
   pushTokenPath,
   type RemoteConnectorDependencies,
   reconcileCloudAgents,
@@ -263,7 +263,9 @@ export async function createApp(
   const runtime =
     env.agentRuntime === "scripted"
       ? new ScriptedAgentRuntime()
-      : new PiAgentRuntime({ sessionRoot: path.resolve(env.dataDir, "pi-sessions") });
+      : new PiAgentRuntime({
+          sessionRoot: env.piSessionRecording ? piSessionsRoot(env.dataDir) : undefined,
+        });
   const notifications = new ExpoPushProvider(env.dataDir);
   const auth = createAuth(prisma, {
     secret: env.authSecret,
