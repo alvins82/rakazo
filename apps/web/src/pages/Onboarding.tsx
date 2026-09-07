@@ -1,10 +1,16 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   type IntegrationSetupState,
+  DEFAULT_MODEL_CONTEXT_WINDOW,
+  DEFAULT_MODEL_MAX_TOKENS,
+  MAX_MODEL_CONTEXT_WINDOW,
+  MAX_MODEL_MAX_TOKENS,
   OPENAI_COMPATIBLE_PROVIDER_ID,
   openAiCompatibleConnectReady,
   openAiCompatibleProbeSuccessMessage,
+  parseModelContextWindow,
   parseModelMaxImagesPerPrompt,
+  parseModelMaxTokens,
 } from "@rakazo/contracts";
 import { createModelProbe, initialModelProbeState } from "@rakazo/core";
 import {
@@ -105,6 +111,8 @@ export function OnboardingPage() {
   const [baseUrl, setBaseUrl] = useState("");
   const [reasoning, setReasoning] = useState(false);
   const [manualModelId, setManualModelId] = useState(false);
+  const [maxTokens, setMaxTokens] = useState(String(DEFAULT_MODEL_MAX_TOKENS));
+  const [contextWindow, setContextWindow] = useState(String(DEFAULT_MODEL_CONTEXT_WINDOW));
   const [supportsImages, setSupportsImages] = useState(false);
   const [maxImagesPerPrompt, setMaxImagesPerPrompt] = useState("");
   const [{ models: probeModels, baseUrl: probedBaseUrl, probing }, setProbe] =
@@ -279,11 +287,28 @@ export function OnboardingPage() {
         }
         const maxImagesPerPromptInput =
           supportsImages && !maxImagesPerPrompt.trim() ? null : parsedMaxImagesPerPrompt;
+
+        const parsedMaxTokens = parseModelMaxTokens(maxTokens);
+        if (parsedMaxTokens === undefined) {
+          setError(
+            t`Enter a whole number from 1 to ${MAX_MODEL_MAX_TOKENS} for maximum output tokens.`,
+          );
+          return;
+        }
+        const parsedContextWindow = parseModelContextWindow(contextWindow);
+        if (parsedContextWindow === undefined) {
+          setError(
+            t`Enter a whole number from 1 to ${MAX_MODEL_CONTEXT_WINDOW} for the context limit.`,
+          );
+          return;
+        }
         await rpc.models.connect({
           provider,
           baseUrl: baseUrl.trim(),
           modelId: modelId.trim(),
           reasoning,
+          maxTokens: parsedMaxTokens,
+          contextWindow: parsedContextWindow,
           supportsImages,
           maxImagesPerPrompt: maxImagesPerPromptInput,
           apiKey: apiKey.trim() || undefined,
@@ -463,6 +488,12 @@ export function OnboardingPage() {
                     onReasoningChange={setReasoning}
                     advancedLabel={t`Advanced`}
                     thinkingLabel={t`Supports thinking`}
+                    maxTokens={maxTokens}
+                    onMaxTokensChange={setMaxTokens}
+                    maxTokensLabel={t`Maximum output tokens`}
+                    contextWindow={contextWindow}
+                    onContextWindowChange={setContextWindow}
+                    contextWindowLabel={t`Context limit`}
                     supportsImages={supportsImages}
                     onSupportsImagesChange={setSupportsImages}
                     imagesLabel={t`Supports images`}

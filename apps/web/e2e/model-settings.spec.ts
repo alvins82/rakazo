@@ -22,6 +22,9 @@ test("custom connections persist reasoning support and bot thinking", async ({
   await expect(page.getByRole("checkbox", { name: "Supports images" })).toBeHidden();
   await page.getByText("Advanced", { exact: true }).click();
   await page.getByRole("checkbox", { name: "Supports thinking" }).check();
+  await page.getByRole("combobox", { name: "Reasoning effort", exact: true }).selectOption("low");
+  await page.getByLabel("Maximum output tokens").fill("8192");
+  await page.getByLabel("Context limit").fill("65536");
   await page.getByRole("checkbox", { name: "Supports images" }).check();
   await page.getByLabel("Maximum images per request").fill("1");
   await captureScreenshot(page, testInfo, "openai-compatible-thinking-connection");
@@ -31,11 +34,21 @@ test("custom connections persist reasoning support and bot thinking", async ({
     Array<{
       modelId?: string;
       reasoning?: boolean;
+      thinkingLevel?: string | null;
+      maxTokens?: number;
+      contextWindow?: number;
       supportsImages?: boolean;
       maxImagesPerPrompt?: number;
     }>
   >(page, "models/credentials", {});
   expect(credentials.find((entry) => entry.modelId === "arbitrary-model")?.reasoning).toBe(true);
+  expect(credentials.find((entry) => entry.modelId === "arbitrary-model")?.thinkingLevel).toBe(
+    "low",
+  );
+  expect(credentials.find((entry) => entry.modelId === "arbitrary-model")?.maxTokens).toBe(8192);
+  expect(credentials.find((entry) => entry.modelId === "arbitrary-model")?.contextWindow).toBe(
+    65536,
+  );
   expect(credentials.find((entry) => entry.modelId === "arbitrary-model")?.supportsImages).toBe(
     true,
   );
@@ -46,6 +59,11 @@ test("custom connections persist reasoning support and bot thinking", async ({
   await openUserSettings(page, "models");
   await page.getByText("Advanced", { exact: true }).click();
   await expect(page.getByRole("checkbox", { name: "Supports thinking" })).toBeChecked();
+  await expect(page.getByRole("combobox", { name: "Reasoning effort", exact: true })).toHaveValue(
+    "low",
+  );
+  await expect(page.getByLabel("Maximum output tokens")).toHaveValue("8192");
+  await expect(page.getByLabel("Context limit")).toHaveValue("65536");
   await expect(page.getByRole("checkbox", { name: "Supports images" })).toBeChecked();
   await expect(page.getByLabel("Maximum images per request")).toHaveValue("1");
   await page.getByLabel("Maximum images per request").fill("");

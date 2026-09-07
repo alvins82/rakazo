@@ -1230,6 +1230,8 @@ description: Prepare standup notes
       baseUrl: "http://127.0.0.1:8000/v1",
       visionModelIds: ["bot-vision-model"],
       maxImagesPerPrompt: 1,
+      maxTokens: 8192,
+      contextWindow: 65536,
     });
     const bot = {
       modelProvider: provider,
@@ -1261,6 +1263,8 @@ description: Prepare standup notes
       id: "bot-vision-model",
       acceptsImages: true,
       maxImagesPerPrompt: 1,
+      maxTokens: 8192,
+      contextWindow: 65536,
     });
 
     bot.modelId = "text-only-model";

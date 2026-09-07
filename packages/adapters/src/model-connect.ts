@@ -36,6 +36,24 @@ export function buildModelConnectPlaintext(
       input.maxImagesPerPrompt === null
         ? undefined
         : (input.maxImagesPerPrompt ?? (sameEndpoint ? previous.maxImagesPerPrompt : undefined));
+    const thinkingLevel =
+      input.thinkingLevel !== undefined
+        ? input.thinkingLevel
+        : sameEndpoint
+          ? previous.thinkingLevel
+          : undefined;
+    const maxTokens =
+      input.maxTokens !== undefined
+        ? input.maxTokens
+        : sameEndpoint
+          ? previous.maxTokens
+          : undefined;
+    const contextWindow =
+      input.contextWindow !== undefined
+        ? input.contextWindow
+        : sameEndpoint
+          ? previous.contextWindow
+          : undefined;
     const visionModelIds = updateModelImageCapabilities(
       previousVisionModelIds,
       prepared.modelId,
@@ -48,6 +66,9 @@ export function buildModelConnectPlaintext(
       kind: "openai_compatible",
       baseUrl: prepared.baseUrl,
       ...(input.reasoning !== undefined ? { reasoning: input.reasoning } : {}),
+      ...(thinkingLevel !== undefined ? { thinkingLevel } : {}),
+      ...(maxTokens !== undefined ? { maxTokens } : {}),
+      ...(contextWindow !== undefined ? { contextWindow } : {}),
       ...(prepared.apiKey ? { apiKey: prepared.apiKey } : {}),
       ...(includeVisionModelIds ? { visionModelIds } : {}),
       ...(maxImagesPerPrompt !== undefined ? { maxImagesPerPrompt } : {}),
@@ -96,6 +117,9 @@ export function modelCredentialDto(
         : compatibleCredential.supportsImages,
     baseUrl: parsed.baseUrl,
     reasoning: parsed.reasoning ?? false,
+    ...(parsed.thinkingLevel !== undefined ? { thinkingLevel: parsed.thinkingLevel } : {}),
+    ...(parsed.maxTokens !== undefined ? { maxTokens: parsed.maxTokens } : {}),
+    ...(parsed.contextWindow !== undefined ? { contextWindow: parsed.contextWindow } : {}),
     ...(parsed.maxImagesPerPrompt !== undefined
       ? { maxImagesPerPrompt: parsed.maxImagesPerPrompt }
       : {}),

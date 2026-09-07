@@ -817,9 +817,11 @@ export function createRunExecutor(deps: ExecutorDeps) {
         apiKey: resolved.oauth ? undefined : resolved.apiKey,
         baseUrl: resolved.baseUrl,
         reasoning: resolved.reasoning,
+        maxTokens: resolved.maxTokens,
+        contextWindow: resolved.contextWindow,
         acceptsImages: resolved.acceptsImages,
         maxImagesPerPrompt: resolved.maxImagesPerPrompt,
-        thinkingLevel,
+        thinkingLevel: thinkingLevel ?? resolved.thinkingLevel ?? null,
         oauth: resolved.oauth
           ? { credential: resolved.oauth, persist: resolved.persistOAuth }
           : undefined,
@@ -3434,9 +3436,11 @@ export function createRunExecutor(deps: ExecutorDeps) {
                 apiKey: resolved.oauth ? undefined : resolved.apiKey,
                 baseUrl: resolved.baseUrl,
                 reasoning: resolved.reasoning,
+                maxTokens: resolved.maxTokens,
+                contextWindow: resolved.contextWindow,
                 acceptsImages: resolved.acceptsImages,
                 maxImagesPerPrompt: resolved.maxImagesPerPrompt,
-                thinkingLevel,
+                thinkingLevel: thinkingLevel ?? resolved.thinkingLevel ?? null,
                 oauth: resolved.oauth
                   ? { credential: resolved.oauth, persist: resolved.persistOAuth }
                   : undefined,
@@ -4516,6 +4520,9 @@ async function resolveModelKey(
   apiKey?: string;
   baseUrl?: string;
   reasoning?: boolean;
+  maxTokens?: number;
+  contextWindow?: number;
+  thinkingLevel?: AgentRunRequest["model"]["thinkingLevel"];
   acceptsImages?: boolean;
   maxImagesPerPrompt?: number;
   oauth?: AgentModelOAuthCredential;
@@ -4567,6 +4574,12 @@ async function resolveModelKey(
         baseUrl,
         reasoning:
           resolved.secret.kind === "openai_compatible" ? resolved.secret.reasoning : undefined,
+        maxTokens:
+          resolved.secret.kind === "openai_compatible" ? resolved.secret.maxTokens : undefined,
+        contextWindow:
+          resolved.secret.kind === "openai_compatible" ? resolved.secret.contextWindow : undefined,
+        thinkingLevel:
+          resolved.secret.kind === "openai_compatible" ? resolved.secret.thinkingLevel : undefined,
         acceptsImages,
         maxImagesPerPrompt:
           resolved.secret.kind === "openai_compatible"

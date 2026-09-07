@@ -13,7 +13,9 @@ import {
   ModelOAuthBeginSchema,
   normalizeCreateBotProfile,
   ProductEventType,
+  parseModelContextWindow,
   parseModelMaxImagesPerPrompt,
+  parseModelMaxTokens,
   ReorderBotsInput,
   RunActivityRowSchema,
   RunSchema,
@@ -35,6 +37,22 @@ describe("contracts", () => {
     expect(parseModelMaxImagesPerPrompt("1001")).toBeUndefined();
     expect(parseModelMaxImagesPerPrompt("1.5")).toBeUndefined();
     expect(parseModelMaxImagesPerPrompt("1", false)).toBeUndefined();
+  });
+
+  it("parses bounded model output-token limits", () => {
+    expect(parseModelMaxTokens("1")).toBe(1);
+    expect(parseModelMaxTokens("131072")).toBe(131072);
+    expect(parseModelMaxTokens("0")).toBeUndefined();
+    expect(parseModelMaxTokens("131073")).toBeUndefined();
+    expect(parseModelMaxTokens("1.5")).toBeUndefined();
+  });
+
+  it("parses bounded model context-window limits", () => {
+    expect(parseModelContextWindow("1")).toBe(1);
+    expect(parseModelContextWindow("1048576")).toBe(1048576);
+    expect(parseModelContextWindow("0")).toBeUndefined();
+    expect(parseModelContextWindow("1048577")).toBeUndefined();
+    expect(parseModelContextWindow("1.5")).toBeUndefined();
   });
 
   it("accepts optional persisted duration only on valid steps blocks", () => {

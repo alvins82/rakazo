@@ -526,6 +526,8 @@ export function modelsForRequest(
       baseUrl: request.model.baseUrl,
       reasoning: request.model.reasoning,
       acceptsImages: request.model.acceptsImages,
+      maxTokens: request.model.maxTokens,
+      contextWindow: request.model.contextWindow,
     });
   }
   return catalogModels();

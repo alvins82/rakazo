@@ -1,9 +1,15 @@
 import type { ModelOAuthBegin } from "@rakazo/contracts";
 import {
+  DEFAULT_MODEL_CONTEXT_WINDOW,
+  DEFAULT_MODEL_MAX_TOKENS,
+  MAX_MODEL_CONTEXT_WINDOW,
+  MAX_MODEL_MAX_TOKENS,
   OPENAI_COMPATIBLE_BASE_URL_HINT,
   OPENAI_COMPATIBLE_PROVIDER_ID,
   openAiCompatibleConnectReady,
+  parseModelContextWindow,
   parseModelMaxImagesPerPrompt,
+  parseModelMaxTokens,
 } from "@rakazo/contracts";
 import { createModelProbe, featuredModelProviders, initialModelProbeState } from "@rakazo/core";
 import { useFocusEffect } from "expo-router";
@@ -47,6 +53,8 @@ export default function Models() {
   const [apiKey, setApiKey] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [reasoning, setReasoning] = useState(false);
+  const [maxTokens, setMaxTokens] = useState(String(DEFAULT_MODEL_MAX_TOKENS));
+  const [contextWindow, setContextWindow] = useState(String(DEFAULT_MODEL_CONTEXT_WINDOW));
   const [supportsImages, setSupportsImages] = useState(false);
   const [maxImagesPerPrompt, setMaxImagesPerPrompt] = useState("");
   const [showEndpointHelp, setShowEndpointHelp] = useState(false);
@@ -114,6 +122,8 @@ export default function Models() {
     if (nextProvider === OPENAI_COMPATIBLE_PROVIDER_ID) {
       setBaseUrl(nextCredential?.baseUrl ?? "");
       setReasoning(nextCredential?.reasoning ?? false);
+      setMaxTokens(String(nextCredential?.maxTokens ?? DEFAULT_MODEL_MAX_TOKENS));
+      setContextWindow(String(nextCredential?.contextWindow ?? DEFAULT_MODEL_CONTEXT_WINDOW));
       setSupportsImages(nextCredential?.supportsImages ?? false);
       setMaxImagesPerPrompt(String(nextCredential?.maxImagesPerPrompt ?? ""));
     }
@@ -197,6 +207,8 @@ export default function Models() {
     const nextCredential = credentials.find((entry) => entry.provider === nextProvider);
     setProvider(nextProvider);
     setReasoning(nextCredential?.reasoning ?? false);
+    setMaxTokens(String(nextCredential?.maxTokens ?? DEFAULT_MODEL_MAX_TOKENS));
+    setContextWindow(String(nextCredential?.contextWindow ?? DEFAULT_MODEL_CONTEXT_WINDOW));
     setSupportsImages(nextCredential?.supportsImages ?? false);
     setMaxImagesPerPrompt(String(nextCredential?.maxImagesPerPrompt ?? ""));
     setModelId(
@@ -275,6 +287,25 @@ export default function Models() {
     }
     const maxImagesPerPromptInput =
       supportsImages && !maxImagesPerPrompt.trim() ? null : parsedMaxImagesPerPrompt;
+
+    const parsedMaxTokens = parseModelMaxTokens(maxTokens);
+    if (parsedMaxTokens === undefined) {
+      setError(
+        t("Enter a whole number from 1 to {max} for maximum output tokens.", {
+          max: MAX_MODEL_MAX_TOKENS,
+        }),
+      );
+      return;
+    }
+    const parsedContextWindow = parseModelContextWindow(contextWindow);
+    if (parsedContextWindow === undefined) {
+      setError(
+        t("Enter a whole number from 1 to {max} for the context limit.", {
+          max: MAX_MODEL_CONTEXT_WINDOW,
+        }),
+      );
+      return;
+    }
     setError(null);
     setNotice(null);
     setPending("connect");
@@ -287,6 +318,8 @@ export default function Models() {
               baseUrl: effectiveBaseUrl,
               modelId: modelId.trim(),
               reasoning,
+              maxTokens: parsedMaxTokens,
+              contextWindow: parsedContextWindow,
               supportsImages,
               maxImagesPerPrompt: maxImagesPerPromptInput,
               apiKey: apiKey.trim() || undefined,
@@ -586,6 +619,34 @@ export default function Models() {
                       value={reasoning}
                       onValueChange={setReasoning}
                       disabled={busy}
+                    />
+                  </View>
+                ) : null}
+                {showAdvanced ? (
+                  <View style={styles.modelRow}>
+                    <Text style={styles.modelLabel}>{t("Context limit")}</Text>
+                    <TextInput
+                      accessibilityLabel={t("Context limit")}
+                      editable={!busy}
+                      keyboardType="number-pad"
+                      maxLength={7}
+                      onChangeText={setContextWindow}
+                      style={[styles.keyInput, styles.maxImagesInput]}
+                      value={contextWindow}
+                    />
+                  </View>
+                ) : null}
+                {showAdvanced ? (
+                  <View style={styles.modelRow}>
+                    <Text style={styles.modelLabel}>{t("Maximum output tokens")}</Text>
+                    <TextInput
+                      accessibilityLabel={t("Maximum output tokens")}
+                      editable={!busy}
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      onChangeText={setMaxTokens}
+                      style={[styles.keyInput, styles.maxImagesInput]}
+                      value={maxTokens}
                     />
                   </View>
                 ) : null}

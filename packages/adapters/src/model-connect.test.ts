@@ -78,6 +78,48 @@ describe("modelCredentialDto", () => {
     ).toMatchObject({ maxImagesPerPrompt: 1 });
   });
 
+  it("projects the configured output-token limit for an OpenAI-compatible connection", () => {
+    const plaintext = serializeModelSecret({
+      kind: "openai_compatible",
+      baseUrl: "https://example.invalid/v1",
+      maxTokens: 8192,
+    });
+
+    expect(
+      modelCredentialDto(
+        {
+          id: "cred-output-tokens",
+          provider: "openai-compatible",
+          label: "Reasoning server",
+          isDefault: true,
+          defaultModel: "qwen-model",
+        },
+        plaintext,
+      ),
+    ).toMatchObject({ maxTokens: 8192 });
+  });
+
+  it("projects the configured context window for an OpenAI-compatible connection", () => {
+    const plaintext = serializeModelSecret({
+      kind: "openai_compatible",
+      baseUrl: "https://example.invalid/v1",
+      contextWindow: 65536,
+    });
+
+    expect(
+      modelCredentialDto(
+        {
+          id: "cred-context-window",
+          provider: "openai-compatible",
+          label: "Long-context server",
+          isDefault: true,
+          defaultModel: "qwen-model",
+        },
+        plaintext,
+      ),
+    ).toMatchObject({ contextWindow: 65536 });
+  });
+
   it("exposes defaultModel as modelId for provider credentials", () => {
     expect(
       modelCredentialDto({
@@ -127,6 +169,35 @@ it.each([true, false])(
       reasoning,
       thinkingLevels: reasoning ? ["off", "minimal", "low", "medium", "high"] : ["off"],
     });
+  },
+);
+
+it.each([null, "low", "high"] as const)(
+  "round-trips the nullable custom reasoning effort %s",
+  (thinkingLevel) => {
+    const plaintext = buildModelConnectPlaintext({
+      provider: "openai-compatible",
+      baseUrl: "http://localhost:8000/v1",
+      modelId: "arbitrary-model",
+      reasoning: true,
+      thinkingLevel,
+    });
+    expect(parseModelSecret(plaintext)).toMatchObject({
+      kind: "openai_compatible",
+      thinkingLevel,
+    });
+    expect(
+      modelCredentialDto(
+        {
+          id: "cred",
+          provider: "openai-compatible",
+          label: "Server",
+          isDefault: true,
+          defaultModel: "arbitrary-model",
+        },
+        plaintext,
+      ),
+    ).toMatchObject({ thinkingLevel });
   },
 );
 
@@ -201,6 +272,27 @@ describe("compatible connection updates", () => {
     );
 
     expect(parseModelSecret(cleared)).not.toHaveProperty("maxImagesPerPrompt");
+  });
+
+  it("persists the output-token limit while preserving it on connection updates", () => {
+    const configured = buildModelConnectPlaintext({
+      ...input,
+      maxTokens: 8192,
+    });
+    const updated = buildModelConnectPlaintext({ ...input, reasoning: false }, configured);
+
+    expect(parseModelSecret(configured)).toMatchObject({ maxTokens: 8192 });
+    expect(parseModelSecret(updated)).toMatchObject({ maxTokens: 8192 });
+  });
+  it("persists the context window while preserving it on connection updates", () => {
+    const configured = buildModelConnectPlaintext({
+      ...input,
+      contextWindow: 65536,
+    });
+    const updated = buildModelConnectPlaintext({ ...input, reasoning: false }, configured);
+
+    expect(parseModelSecret(configured)).toMatchObject({ contextWindow: 65536 });
+    expect(parseModelSecret(updated)).toMatchObject({ contextWindow: 65536 });
   });
   it.each(["", "fake-replacement-key"])(
     "honors an explicit key replacement or removal",
