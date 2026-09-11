@@ -748,6 +748,7 @@ export function createRunExecutor(deps: ExecutorDeps) {
       scope.spaceId,
       credential,
       provider,
+      modelId,
       registerSecrets,
     );
     return {
@@ -756,7 +757,11 @@ export function createRunExecutor(deps: ExecutorDeps) {
       apiKey: resolved.oauth ? undefined : resolved.apiKey,
       baseUrl: resolved.baseUrl,
       reasoning: resolved.reasoning,
-      thinkingLevel: null,
+      maxTokens: resolved.maxTokens,
+      contextWindow: resolved.contextWindow,
+      acceptsImages: resolved.acceptsImages,
+      maxImagesPerPrompt: resolved.maxImagesPerPrompt,
+      thinkingLevel: resolved.thinkingLevel ?? null,
       oauth: resolved.oauth
         ? { credential: resolved.oauth, persist: resolved.persistOAuth }
         : undefined,
