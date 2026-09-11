@@ -47,7 +47,6 @@ export function updateModelImageCapabilities(
   return [...next];
 }
 
-
 let catalogModelsCache: Models | undefined;
 
 function catalogModels(): Models {
